@@ -63,7 +63,7 @@ export default function AlertTable({ alerts, selectedAlert, onSelect, onGenerate
       <TableHeader count={alerts.length} />
 
       {/* Scrollable table body */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto' }}>
         <table style={{
           width: '100%',
           borderCollapse: 'collapse',

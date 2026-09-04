@@ -23,11 +23,13 @@ export default function Header({ apiStatus, lastUpdated }) {
         background: '#1a202c',
         borderBottom: '3px solid #2c5282',
         color: '#fff',
-        padding: '0 24px',
+        padding: '12px 24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        height: '60px',
+        minHeight: '60px',
+        flexWrap: 'wrap',
+        gap: '12px',
         flexShrink: 0,
       }}
     >

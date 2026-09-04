@@ -94,10 +94,10 @@ export default function App() {
       <main className="flex-1 flex flex-col gap-0">
 
         {/* Split row: Video + Map */}
-        <section className="flex flex-col lg:flex-row border-b" style={{ borderColor: 'var(--color-border)', height: '480px' }}>
+        <section className="flex flex-col lg:flex-row border-b lg:h-[480px]" style={{ borderColor: 'var(--color-border)' }}>
           
           {/* Live Video Feed */}
-          <div className="w-full lg:w-1/2 border-r flex flex-col" style={{ borderColor: 'var(--color-border)', backgroundColor: '#000' }}>
+          <div className="w-full lg:w-1/2 h-[300px] lg:h-full border-b lg:border-b-0 lg:border-r flex flex-col" style={{ borderColor: 'var(--color-border)', backgroundColor: '#000' }}>
              <div style={{ padding: '8px 16px', background: '#fff', borderBottom: '1px solid #d1d5db', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                  <span style={{ fontSize: 11, fontWeight: 700, color: '#718096', letterSpacing: '0.05em' }}>LIVE DASHCAM FEED: BUS-017</span>
@@ -127,7 +127,7 @@ export default function App() {
           </div>
 
           {/* Map View */}
-          <div className="w-full lg:w-1/2 h-full">
+          <div className="w-full lg:w-1/2 h-[400px] lg:h-full">
             <MapView
               potholeAlerts={potholeAlerts}
               trafficData={traffic}
@@ -139,7 +139,7 @@ export default function App() {
         {/* Bottom row — alerts table + detection preview */}
         <section className="flex flex-col lg:flex-row" style={{ minHeight: '340px' }}>
           {/* Alert Table */}
-          <div className="flex-1 border-r" style={{ borderColor: 'var(--color-border)' }}>
+          <div className="flex-1 border-b lg:border-b-0 lg:border-r h-[400px] lg:h-auto" style={{ borderColor: 'var(--color-border)' }}>
             <AlertTable
               alerts={alerts}
               selectedAlert={selectedAlert}
