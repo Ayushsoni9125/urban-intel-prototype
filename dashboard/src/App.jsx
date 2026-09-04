@@ -93,13 +93,38 @@ export default function App() {
       {/* Main content */}
       <main className="flex-1 flex flex-col gap-0">
 
-        {/* Map row — full width */}
-        <section className="border-b" style={{ borderColor: 'var(--color-border)', height: '480px' }}>
-          <MapView
-            potholeAlerts={potholeAlerts}
-            trafficData={traffic}
-            onMarkerClick={handleAlertSelect}
-          />
+        {/* Split row: Video + Map */}
+        <section className="flex flex-col lg:flex-row border-b" style={{ borderColor: 'var(--color-border)', height: '480px' }}>
+          
+          {/* Live Video Feed */}
+          <div className="w-full lg:w-1/2 border-r flex flex-col" style={{ borderColor: 'var(--color-border)', backgroundColor: '#000' }}>
+             <div style={{ padding: '8px 16px', background: '#fff', borderBottom: '1px solid #d1d5db', flexShrink: 0, display: 'flex', justifyContent: 'space-between' }}>
+               <span style={{ fontSize: 11, fontWeight: 700, color: '#718096', letterSpacing: '0.05em' }}>LIVE DASHCAM FEED: BUS-017</span>
+               <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }} className="animate-pulse">● LIVE</span>
+             </div>
+             <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+               <video 
+                  src={`${API_BASE}/videos/pothole_video.mp4`} 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+               />
+               <div style={{ position: 'absolute', bottom: 10, left: 10, color: 'white', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', fontSize: 10, borderRadius: 3 }}>
+                 Simulated Feed
+               </div>
+             </div>
+          </div>
+
+          {/* Map View */}
+          <div className="w-full lg:w-1/2 h-full">
+            <MapView
+              potholeAlerts={potholeAlerts}
+              trafficData={traffic}
+              onMarkerClick={handleAlertSelect}
+            />
+          </div>
         </section>
 
         {/* Bottom row — alerts table + detection preview */}

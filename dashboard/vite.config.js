@@ -9,6 +9,7 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:8000',
       '/images': 'http://localhost:8000',
+      '/videos': 'http://localhost:8000',
     },
   },
 })

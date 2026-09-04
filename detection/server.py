@@ -35,9 +35,11 @@ _PROJECT_ROOT = _THIS_DIR.parent
 ALERTS_FILE = _PROJECT_ROOT / "shared" / "live-alerts.json"
 TRAFFIC_FILE = _PROJECT_ROOT / "shared" / "traffic-data.json"
 IMAGES_DIR = _THIS_DIR / "output" / "alerts"
+VIDEOS_DIR = _THIS_DIR / "videos"
 
 # Ensure directories exist
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
 (_PROJECT_ROOT / "shared").mkdir(parents=True, exist_ok=True)
 
 # Initialize empty JSON files if missing
@@ -69,6 +71,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve the raw input videos for live dashboard viewing
+app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
+
 
 
 # --------------------------------------------------

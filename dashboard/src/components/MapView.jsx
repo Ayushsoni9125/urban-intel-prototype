@@ -137,6 +137,7 @@ const DEFAULT_ZOOM = 14
 
 export default function MapView({ potholeAlerts, trafficData, onMarkerClick }) {
   const [activeLayer, setActiveLayer] = useState('traffic')
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Normalise traffic heat points — larger point array = route density
   const trafficPoints = useMemo(() => {
@@ -175,7 +176,17 @@ export default function MapView({ potholeAlerts, trafficData, onMarkerClick }) {
   })
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      ...(isFullscreen ? {
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        background: '#fff'
+      } : {})
+    }}>
 
       {/* Toolbar */}
       <div style={{
@@ -221,6 +232,24 @@ export default function MapView({ potholeAlerts, trafficData, onMarkerClick }) {
             </>
           )}
         </div>
+
+        {/* Fullscreen Toggle */}
+        <button
+          onClick={() => setIsFullscreen(!isFullscreen)}
+          style={{
+            marginLeft: 8,
+            border: '1px solid #d1d5db',
+            borderRadius: 3,
+            padding: '4px 10px',
+            fontSize: 11,
+            fontWeight: 600,
+            background: '#f3f4f6',
+            color: '#374151',
+            cursor: 'pointer',
+          }}
+        >
+          {isFullscreen ? '↘ Exit Fullscreen' : '↗ Fullscreen'}
+        </button>
       </div>
 
       {/* Map */}
