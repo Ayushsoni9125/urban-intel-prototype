@@ -106,11 +106,11 @@ export default function App() {
                <div style={{ display: 'flex', gap: '8px' }}>
                  <button 
                     onClick={() => fetch(`${API_BASE}/api/start`, { method: 'POST' })}
-                    style={{ fontSize: 10, fontWeight: 600, padding: '4px 8px', background: '#10b981', color: 'white', borderRadius: 3 }}
+                    className="px-3 py-1 text-[10px] font-bold tracking-wide text-white bg-emerald-500 hover:bg-emerald-600 rounded cursor-pointer transition-colors shadow-sm"
                  >▶ START AI</button>
                  <button 
                     onClick={() => fetch(`${API_BASE}/api/reset`, { method: 'POST' })}
-                    style={{ fontSize: 10, fontWeight: 600, padding: '4px 8px', background: '#ef4444', color: 'white', borderRadius: 3 }}
+                    className="px-3 py-1 text-[10px] font-bold tracking-wide text-white bg-red-500 hover:bg-red-600 rounded cursor-pointer transition-colors shadow-sm"
                  >↺ RESET</button>
                </div>
              </div>
