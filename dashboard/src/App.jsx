@@ -98,9 +98,21 @@ export default function App() {
           
           {/* Live Video Feed */}
           <div className="w-full lg:w-1/2 border-r flex flex-col" style={{ borderColor: 'var(--color-border)', backgroundColor: '#000' }}>
-             <div style={{ padding: '8px 16px', background: '#fff', borderBottom: '1px solid #d1d5db', flexShrink: 0, display: 'flex', justifyContent: 'space-between' }}>
-               <span style={{ fontSize: 11, fontWeight: 700, color: '#718096', letterSpacing: '0.05em' }}>LIVE DASHCAM FEED: BUS-017</span>
-               <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }} className="animate-pulse">● LIVE</span>
+             <div style={{ padding: '8px 16px', background: '#fff', borderBottom: '1px solid #d1d5db', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                 <span style={{ fontSize: 11, fontWeight: 700, color: '#718096', letterSpacing: '0.05em' }}>LIVE DASHCAM FEED: BUS-017</span>
+                 <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }} className="animate-pulse">● LIVE</span>
+               </div>
+               <div style={{ display: 'flex', gap: '8px' }}>
+                 <button 
+                    onClick={() => fetch(`${API_BASE}/api/start`, { method: 'POST' })}
+                    style={{ fontSize: 10, fontWeight: 600, padding: '4px 8px', background: '#10b981', color: 'white', borderRadius: 3 }}
+                 >▶ START AI</button>
+                 <button 
+                    onClick={() => fetch(`${API_BASE}/api/reset`, { method: 'POST' })}
+                    style={{ fontSize: 10, fontWeight: 600, padding: '4px 8px', background: '#ef4444', color: 'white', borderRadius: 3 }}
+                 >↺ RESET</button>
+               </div>
              </div>
              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                <img 

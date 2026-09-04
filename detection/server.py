@@ -27,6 +27,9 @@ from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 import asyncio
 from fastapi import Request
+import subprocess
+import cv2
+import numpy as np
 
 
 # --------------------------------------------------
@@ -101,11 +104,72 @@ def _load_json(filepath: Path) -> list:
 # --------------------------------------------------
 # Video Streaming State
 # --------------------------------------------------
-LATEST_FRAME = None
+def _get_placeholder_frame():
+    frame = np.zeros((360, 640, 3), dtype=np.uint8)
+    cv2.putText(frame, "SYSTEM IDLE - WAITING FOR LIVE FEED", (90, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    _, buffer = cv2.imencode('.jpg', frame)
+    return buffer.tobytes()
+
+PLACEHOLDER_FRAME = _get_placeholder_frame()
+LATEST_FRAME = PLACEHOLDER_FRAME
+
+# --------------------------------------------------
+# Process tracking
+# --------------------------------------------------
+_running_processes = []
 
 # --------------------------------------------------
 # Routes
 # --------------------------------------------------
+
+@app.post("/api/reset")
+async def reset_demo():
+    """Reset the demo state."""
+    global LATEST_FRAME, _running_processes
+    
+    # Kill any running scripts
+    for p in _running_processes:
+        try:
+            p.terminate()
+        except:
+            pass
+    _running_processes.clear()
+
+    # Reset video feed
+    LATEST_FRAME = PLACEHOLDER_FRAME
+
+    # Call reset_demo.py
+    reset_script = _PROJECT_ROOT / "reset_demo.py"
+    if reset_script.exists():
+        subprocess.run([sys.executable, str(reset_script)], cwd=str(_PROJECT_ROOT))
+        
+    return {"status": "ok", "message": "Demo reset successful."}
+
+@app.post("/api/start")
+async def start_demo():
+    """Start the YOLO detection scripts in the background."""
+    global _running_processes
+    
+    # Prevent multiple runs
+    if any(p.poll() is None for p in _running_processes):
+        return {"status": "error", "message": "Detection is already running."}
+        
+    _running_processes.clear()
+
+    # Start pothole detection
+    p1 = subprocess.Popen(
+        [sys.executable, "detection/pothole_detection.py", "detection/videos/pothole_video.mp4"],
+        cwd=str(_PROJECT_ROOT)
+    )
+    # Start traffic detection
+    p2 = subprocess.Popen(
+        [sys.executable, "detection/vehicle_detection.py", "detection/videos/traffic_video.mp4"],
+        cwd=str(_PROJECT_ROOT)
+    )
+    
+    _running_processes.extend([p1, p2])
+    return {"status": "ok", "message": "Detection started."}
+
 
 @app.post("/api/frame")
 async def update_frame(request: Request):
@@ -238,4 +302,10 @@ if __name__ == "__main__":
     print("  Images dir:   ", IMAGES_DIR)
     print("\nAPI docs: http://localhost:8000/docs")
     print("Health:   http://localhost:8000/api/health\n")
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True, app_dir=str(_THIS_DIR))
+    # Clean up processes on exit
+    try:
+        uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True, app_dir=str(_THIS_DIR))
+    finally:
+        for p in _running_processes:
+            try: p.terminate()
+            except: pass
