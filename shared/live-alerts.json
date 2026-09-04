@@ -1,1 +1,97 @@
-[]
+[
+  {
+    "id": "822dad60-350e-447a-ae8f-e0d205a91758",
+    "event_type": "pothole",
+    "confidence": 0.741,
+    "timestamp": "2026-09-04T16:40:54.152285+00:00",
+    "gps": {
+      "lat": 28.609584,
+      "lng": 77.243054
+    },
+    "bus_id": "DL-BUS-017",
+    "image_path": "/images/pothole_001_20260904_221054.jpg",
+    "frame_number": 30,
+    "pothole_number": 1,
+    "simulated_gps": true
+  },
+  {
+    "id": "02cb543d-73e7-4af9-b850-f39d5f1f23b7",
+    "event_type": "pothole",
+    "confidence": 0.613,
+    "timestamp": "2026-09-04T16:40:54.509524+00:00",
+    "gps": {
+      "lat": 28.609628,
+      "lng": 77.243215
+    },
+    "bus_id": "DL-BUS-017",
+    "image_path": "/images/pothole_002_20260904_221054.jpg",
+    "frame_number": 50,
+    "pothole_number": 2,
+    "simulated_gps": true
+  },
+  {
+    "id": "cb707316-04be-4635-a07c-e0034410b138",
+    "event_type": "pothole",
+    "confidence": 0.5573,
+    "timestamp": "2026-09-04T16:40:54.815548+00:00",
+    "gps": {
+      "lat": 28.60973,
+      "lng": 77.243257
+    },
+    "bus_id": "DL-BUS-017",
+    "image_path": "/images/pothole_003_20260904_221054.jpg",
+    "frame_number": 80,
+    "pothole_number": 3,
+    "simulated_gps": true
+  },
+  {
+    "id": "32dd9c0c-0469-4437-8623-36afcb968590",
+    "event_type": "pothole",
+    "confidence": 0.8623,
+    "timestamp": "2026-09-04T16:40:59.309169+00:00",
+    "gps": {
+      "lat": 28.61046,
+      "lng": 77.244528
+    },
+    "bus_id": "DL-BUS-017",
+    "image_path": "/images/pothole_004_20260904_221059.jpg",
+    "frame_number": 425,
+    "pothole_number": 4,
+    "simulated_gps": true
+  },
+  {
+    "id": "fa7d3917-4d97-407a-9fdf-e8fb302b5e47",
+    "event_type": "pothole",
+    "confidence": 0.6267,
+    "timestamp": "2026-09-04T16:41:02.261583+00:00",
+    "gps": {
+      "lat": 28.611033,
+      "lng": 77.245352
+    },
+    "bus_id": "DL-BUS-017",
+    "image_path": "/images/pothole_005_20260904_221102.jpg",
+    "frame_number": 640,
+    "pothole_number": 5,
+    "simulated_gps": true
+  },
+  {
+    "id": "c82b2f1c-7bbe-4cac-8595-982278908132",
+    "event_type": "vehicle_congestion",
+    "confidence": 0.95,
+    "timestamp": "2026-09-04T16:41:32.539553+00:00",
+    "gps": {
+      "lat": 28.632724,
+      "lng": 77.23421
+    },
+    "bus_id": "DL-BUS-042",
+    "image_path": "",
+    "vehicle_count": 285,
+    "classes": {
+      "person": 40,
+      "car": 255,
+      "motorcycle": 1,
+      "bus": 8,
+      "truck": 21
+    }
+  }
+]
