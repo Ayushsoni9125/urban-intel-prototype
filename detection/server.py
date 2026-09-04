@@ -293,6 +293,15 @@ async def serve_image(filename: str):
 
 
 # --------------------------------------------------
+# Frontend Static Files (For Production/Docker)
+# --------------------------------------------------
+DASHBOARD_DIST = _PROJECT_ROOT / "dashboard" / "dist"
+if DASHBOARD_DIST.exists():
+    # Mount everything else to the built React app
+    app.mount("/", StaticFiles(directory=str(DASHBOARD_DIST), html=True), name="frontend")
+
+
+# --------------------------------------------------
 # Run directly
 # --------------------------------------------------
 if __name__ == "__main__":
