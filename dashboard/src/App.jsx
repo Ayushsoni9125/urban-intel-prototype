@@ -8,7 +8,7 @@ import IncidentReport from './components/IncidentReport'
 
 const API_BASE = ''  // Vite proxy forwards /api → localhost:8000
 
-const POLL_INTERVAL_MS = 5000  // poll every 5 seconds
+const POLL_INTERVAL_MS = 1500  // poll every 1.5 seconds
 
 export default function App() {
   const [alerts, setAlerts] = useState([])

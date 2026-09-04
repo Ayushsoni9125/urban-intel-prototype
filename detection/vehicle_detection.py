@@ -233,10 +233,10 @@ def detect_vehicles(input_video: str) -> None:
     # Accumulate traffic density points
     traffic_points = []
 
-    # Aggregate vehicle counts across frames for a density point every ~30 frames
+    # Aggregate vehicle counts across frames for a density point every ~1.5 seconds (9 sampled frames * 5 = 45 frames)
     density_accumulator = {name: 0 for name in TARGET_CLASSES.values()}
     density_frame_count = 0
-    DENSITY_WINDOW = 30   # aggregate over this many frames before saving a point
+    DENSITY_WINDOW = 9   # aggregate over this many frames before saving a point
 
     frame_number = 0
 
