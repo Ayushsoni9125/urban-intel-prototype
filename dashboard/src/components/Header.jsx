@@ -83,18 +83,7 @@ export default function Header({ apiStatus, lastUpdated }) {
           </span>
         </div>
 
-        {/* Disclaimer */}
-        <span style={{
-          fontSize: 10,
-          color: '#4a5568',
-          background: '#2d3748',
-          border: '1px solid #4a5568',
-          borderRadius: 3,
-          padding: '2px 6px',
-          letterSpacing: '0.05em',
-        }}>
-          SIH 2026 PROTOTYPE
-        </span>
+
       </div>
     </header>
   )
