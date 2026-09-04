@@ -12,6 +12,9 @@ Usage:
   python detection/pothole_detection.py detection/videos/pothole_video.mp4
 """
 
+import sys
+import threading
+import requests
 from ultralytics import YOLO
 import cv2
 import os
@@ -271,6 +274,19 @@ def detect_potholes(input_video: str) -> None:
                     (15, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 2)
         cv2.putText(frame, "GPS: SIMULATED",
                     (15, height - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (180, 180, 180), 1)
+
+        # --------------------------------------------------
+        # Stream frame to dashboard (non-blocking)
+        # --------------------------------------------------
+        small_frame = cv2.resize(frame, (640, int(640 * height / width)))
+        ret, buffer = cv2.imencode('.jpg', small_frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+        if ret:
+            def send_frame(data):
+                try:
+                    requests.post('http://localhost:8000/api/frame', data=data, timeout=0.1)
+                except:
+                    pass
+            threading.Thread(target=send_frame, args=(buffer.tobytes(),), daemon=True).start()
 
         out.write(frame)
 

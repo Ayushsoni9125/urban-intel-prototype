@@ -23,8 +23,11 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+import asyncio
+from fastapi import Request
+
 
 # --------------------------------------------------
 # Paths
@@ -96,8 +99,35 @@ def _load_json(filepath: Path) -> list:
 
 
 # --------------------------------------------------
+# Video Streaming State
+# --------------------------------------------------
+LATEST_FRAME = None
+
+# --------------------------------------------------
 # Routes
 # --------------------------------------------------
+
+@app.post("/api/frame")
+async def update_frame(request: Request):
+    """Receive a JPEG frame from the detection script."""
+    global LATEST_FRAME
+    LATEST_FRAME = await request.body()
+    return {"status": "ok"}
+
+async def _frame_generator():
+    """Generator for MJPEG stream."""
+    global LATEST_FRAME
+    while True:
+        if LATEST_FRAME:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + LATEST_FRAME + b'\r\n')
+        await asyncio.sleep(0.05)  # Max 20 fps
+
+@app.get("/api/video_feed")
+async def video_feed():
+    """Stream live detection frames to the dashboard."""
+    return StreamingResponse(_frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
+
 
 @app.get("/api/health")
 async def health():

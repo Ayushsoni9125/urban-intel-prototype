@@ -103,16 +103,13 @@ export default function App() {
                <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }} className="animate-pulse">● LIVE</span>
              </div>
              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-               <video 
-                  src={`${API_BASE}/videos/pothole_video.mp4`} 
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline
+               <img 
+                  src={`${API_BASE}/api/video_feed`} 
+                  alt="Live Dashcam Feed"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                />
                <div style={{ position: 'absolute', bottom: 10, left: 10, color: 'white', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', fontSize: 10, borderRadius: 3 }}>
-                 Simulated Feed
+                 AI Processed Feed
                </div>
              </div>
           </div>
