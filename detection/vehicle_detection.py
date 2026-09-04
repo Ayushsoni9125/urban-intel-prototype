@@ -23,7 +23,7 @@ import sys
 
 # Add parent dir so we can import alert_generator
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from alert_generator import save_traffic_data, create_alert
+from alert_generator import save_traffic_data, create_alert, _load_json, _save_json, TRAFFIC_FILE
 
 # --------------------------------------------------
 # 1. Configuration
@@ -209,6 +209,13 @@ def detect_vehicles(input_video: str) -> None:
     print(f"  Total frames: {total_frames}")
 
     # --------------------------------------------------
+    # Clear existing traffic data so demo starts fresh
+    # (Alerts from pothole detection are kept)
+    # --------------------------------------------------
+    _save_json(TRAFFIC_FILE, [])
+    print("[Demo] Traffic data cleared — starting fresh.\n")
+
+    # --------------------------------------------------
     # Output video
     # --------------------------------------------------
     output_dir = os.path.join(_THIS_DIR, "output")
@@ -289,7 +296,8 @@ def detect_vehicles(input_video: str) -> None:
         density_frame_count += 1
 
         # --------------------------------------------------
-        # Save traffic density point every DENSITY_WINDOW frames
+        # Save traffic density point IMMEDIATELY every DENSITY_WINDOW frames
+        # Writing instantly means the dashboard heatmap builds up in real-time.
         # --------------------------------------------------
         if density_frame_count >= DENSITY_WINDOW:
             vehicle_count = sum(
@@ -305,9 +313,14 @@ def detect_vehicles(input_video: str) -> None:
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "classes": dict(density_accumulator),
                     "frame": frame_number,
-                    "simulated_gps": True   # Important: clearly marked as simulated
+                    "simulated_gps": True
                 }
+                # Append immediately to traffic-data.json
+                existing = _load_json(TRAFFIC_FILE)
+                existing.append(point)
+                _save_json(TRAFFIC_FILE, existing)
                 traffic_points.append(point)
+                print(f"  [Traffic] Density point saved: {vehicle_count} vehicles @ frame {frame_number}")
 
             # Reset accumulator
             density_accumulator = {name: 0 for name in TARGET_CLASSES.values()}
@@ -360,7 +373,7 @@ def detect_vehicles(input_video: str) -> None:
             print(f"Frame {frame_number}: {detected}")
 
     # --------------------------------------------------
-    # Save final density point if any remaining
+    # Final density point — flush remainder
     # --------------------------------------------------
     if density_frame_count > 0:
         vehicle_count = sum(
@@ -369,7 +382,7 @@ def detect_vehicles(input_video: str) -> None:
         )
         if vehicle_count > 0:
             gps = get_simulated_gps(frame_number)
-            traffic_points.append({
+            point = {
                 "lat": gps["lat"],
                 "lng": gps["lng"],
                 "vehicle_count": vehicle_count,
@@ -377,12 +390,13 @@ def detect_vehicles(input_video: str) -> None:
                 "classes": dict(density_accumulator),
                 "frame": frame_number,
                 "simulated_gps": True
-            })
+            }
+            existing = _load_json(TRAFFIC_FILE)
+            existing.append(point)
+            _save_json(TRAFFIC_FILE, existing)
+            traffic_points.append(point)
 
-    # --------------------------------------------------
-    # Persist traffic data to shared/traffic-data.json
-    # --------------------------------------------------
-    save_traffic_data(traffic_points)
+    # No need to call save_traffic_data() — data was written incrementally above
 
     # Also create a congestion alert if traffic was high at any point
     if traffic_points:

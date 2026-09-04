@@ -27,7 +27,7 @@ _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.dirname(_THIS_DIR)
 sys.path.insert(0, _THIS_DIR)
 
-from alert_generator import create_alert
+from alert_generator import create_alert, _save_json, ALERTS_FILE
 
 # --------------------------------------------------
 # 1. Configuration
@@ -117,6 +117,12 @@ def detect_potholes(input_video: str) -> None:
 
     print(f"Video: {input_video}")
     print(f"  {width}x{height} @ {fps:.1f} fps, {total_frames} frames")
+
+    # --------------------------------------------------
+    # Clear existing pothole alerts so every demo starts fresh
+    # --------------------------------------------------
+    _save_json(ALERTS_FILE, [])
+    print("[Demo] Pothole alerts cleared — starting fresh.\n")
 
     # --------------------------------------------------
     # Prepare output
