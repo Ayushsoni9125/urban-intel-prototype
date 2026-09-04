@@ -1,0 +1,662 @@
+[
+  {
+    "lat": 28.614376,
+    "lng": 77.209563,
+    "vehicle_count": 124,
+    "timestamp": "2026-09-04T13:54:58.168341+00:00",
+    "classes": {
+      "person": 19,
+      "car": 85,
+      "motorcycle": 4,
+      "bus": 16,
+      "truck": 19
+    },
+    "frame": 150,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.614832,
+    "lng": 77.210244,
+    "vehicle_count": 65,
+    "timestamp": "2026-09-04T13:54:58.975724+00:00",
+    "classes": {
+      "person": 25,
+      "car": 44,
+      "motorcycle": 21,
+      "bus": 0,
+      "truck": 0
+    },
+    "frame": 300,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.615263,
+    "lng": 77.210871,
+    "vehicle_count": 107,
+    "timestamp": "2026-09-04T13:54:59.784424+00:00",
+    "classes": {
+      "person": 70,
+      "car": 54,
+      "motorcycle": 43,
+      "bus": 0,
+      "truck": 10
+    },
+    "frame": 450,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.615722,
+    "lng": 77.211403,
+    "vehicle_count": 96,
+    "timestamp": "2026-09-04T13:55:00.637568+00:00",
+    "classes": {
+      "person": 75,
+      "car": 39,
+      "motorcycle": 57,
+      "bus": 0,
+      "truck": 0
+    },
+    "frame": 600,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.61609,
+    "lng": 77.212051,
+    "vehicle_count": 83,
+    "timestamp": "2026-09-04T13:55:01.502721+00:00",
+    "classes": {
+      "person": 59,
+      "car": 60,
+      "motorcycle": 22,
+      "bus": 0,
+      "truck": 1
+    },
+    "frame": 750,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.616597,
+    "lng": 77.212546,
+    "vehicle_count": 107,
+    "timestamp": "2026-09-04T13:55:02.342848+00:00",
+    "classes": {
+      "person": 69,
+      "car": 50,
+      "motorcycle": 16,
+      "bus": 27,
+      "truck": 14
+    },
+    "frame": 900,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.61706,
+    "lng": 77.213213,
+    "vehicle_count": 198,
+    "timestamp": "2026-09-04T13:55:03.289865+00:00",
+    "classes": {
+      "person": 68,
+      "car": 116,
+      "motorcycle": 21,
+      "bus": 45,
+      "truck": 16
+    },
+    "frame": 1050,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.617532,
+    "lng": 77.213783,
+    "vehicle_count": 137,
+    "timestamp": "2026-09-04T13:55:04.130561+00:00",
+    "classes": {
+      "person": 14,
+      "car": 105,
+      "motorcycle": 1,
+      "bus": 15,
+      "truck": 16
+    },
+    "frame": 1200,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.617979,
+    "lng": 77.214333,
+    "vehicle_count": 141,
+    "timestamp": "2026-09-04T13:55:05.015208+00:00",
+    "classes": {
+      "person": 6,
+      "car": 105,
+      "motorcycle": 0,
+      "bus": 7,
+      "truck": 29
+    },
+    "frame": 1350,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.618343,
+    "lng": 77.214969,
+    "vehicle_count": 138,
+    "timestamp": "2026-09-04T13:55:05.855589+00:00",
+    "classes": {
+      "person": 6,
+      "car": 105,
+      "motorcycle": 0,
+      "bus": 9,
+      "truck": 24
+    },
+    "frame": 1500,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.618866,
+    "lng": 77.215659,
+    "vehicle_count": 132,
+    "timestamp": "2026-09-04T13:55:06.700898+00:00",
+    "classes": {
+      "person": 1,
+      "car": 91,
+      "motorcycle": 0,
+      "bus": 11,
+      "truck": 30
+    },
+    "frame": 1650,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.619345,
+    "lng": 77.216205,
+    "vehicle_count": 113,
+    "timestamp": "2026-09-04T13:55:07.541921+00:00",
+    "classes": {
+      "person": 0,
+      "car": 90,
+      "motorcycle": 0,
+      "bus": 0,
+      "truck": 23
+    },
+    "frame": 1800,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.619737,
+    "lng": 77.216743,
+    "vehicle_count": 123,
+    "timestamp": "2026-09-04T13:55:08.376397+00:00",
+    "classes": {
+      "person": 0,
+      "car": 102,
+      "motorcycle": 0,
+      "bus": 0,
+      "truck": 21
+    },
+    "frame": 1950,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.620233,
+    "lng": 77.217415,
+    "vehicle_count": 163,
+    "timestamp": "2026-09-04T13:55:09.229849+00:00",
+    "classes": {
+      "person": 2,
+      "car": 131,
+      "motorcycle": 0,
+      "bus": 15,
+      "truck": 17
+    },
+    "frame": 2100,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.620623,
+    "lng": 77.218062,
+    "vehicle_count": 173,
+    "timestamp": "2026-09-04T13:55:10.103498+00:00",
+    "classes": {
+      "person": 51,
+      "car": 116,
+      "motorcycle": 16,
+      "bus": 25,
+      "truck": 16
+    },
+    "frame": 2250,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.621101,
+    "lng": 77.218576,
+    "vehicle_count": 189,
+    "timestamp": "2026-09-04T13:55:10.987695+00:00",
+    "classes": {
+      "person": 14,
+      "car": 153,
+      "motorcycle": 3,
+      "bus": 17,
+      "truck": 16
+    },
+    "frame": 2400,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.621512,
+    "lng": 77.21927,
+    "vehicle_count": 148,
+    "timestamp": "2026-09-04T13:55:11.801058+00:00",
+    "classes": {
+      "person": 40,
+      "car": 102,
+      "motorcycle": 20,
+      "bus": 0,
+      "truck": 26
+    },
+    "frame": 2550,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.621981,
+    "lng": 77.219825,
+    "vehicle_count": 145,
+    "timestamp": "2026-09-04T13:55:12.621588+00:00",
+    "classes": {
+      "person": 35,
+      "car": 110,
+      "motorcycle": 23,
+      "bus": 0,
+      "truck": 12
+    },
+    "frame": 2700,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.622412,
+    "lng": 77.220357,
+    "vehicle_count": 138,
+    "timestamp": "2026-09-04T13:55:13.445960+00:00",
+    "classes": {
+      "person": 44,
+      "car": 104,
+      "motorcycle": 7,
+      "bus": 7,
+      "truck": 20
+    },
+    "frame": 2850,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.622873,
+    "lng": 77.221008,
+    "vehicle_count": 115,
+    "timestamp": "2026-09-04T13:55:14.306625+00:00",
+    "classes": {
+      "person": 34,
+      "car": 90,
+      "motorcycle": 0,
+      "bus": 14,
+      "truck": 11
+    },
+    "frame": 3000,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.623397,
+    "lng": 77.221677,
+    "vehicle_count": 97,
+    "timestamp": "2026-09-04T13:55:15.191801+00:00",
+    "classes": {
+      "person": 69,
+      "car": 96,
+      "motorcycle": 0,
+      "bus": 0,
+      "truck": 1
+    },
+    "frame": 3150,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.623812,
+    "lng": 77.222186,
+    "vehicle_count": 95,
+    "timestamp": "2026-09-04T13:55:16.064327+00:00",
+    "classes": {
+      "person": 38,
+      "car": 85,
+      "motorcycle": 0,
+      "bus": 0,
+      "truck": 10
+    },
+    "frame": 3300,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.624222,
+    "lng": 77.222866,
+    "vehicle_count": 94,
+    "timestamp": "2026-09-04T13:55:16.906432+00:00",
+    "classes": {
+      "person": 41,
+      "car": 93,
+      "motorcycle": 0,
+      "bus": 0,
+      "truck": 1
+    },
+    "frame": 3450,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.624649,
+    "lng": 77.223458,
+    "vehicle_count": 134,
+    "timestamp": "2026-09-04T13:55:17.744556+00:00",
+    "classes": {
+      "person": 15,
+      "car": 132,
+      "motorcycle": 0,
+      "bus": 0,
+      "truck": 2
+    },
+    "frame": 3600,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.625074,
+    "lng": 77.224031,
+    "vehicle_count": 65,
+    "timestamp": "2026-09-04T13:55:18.570249+00:00",
+    "classes": {
+      "person": 0,
+      "car": 64,
+      "motorcycle": 0,
+      "bus": 0,
+      "truck": 1
+    },
+    "frame": 3750,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.625652,
+    "lng": 77.224654,
+    "vehicle_count": 53,
+    "timestamp": "2026-09-04T13:55:19.375508+00:00",
+    "classes": {
+      "person": 23,
+      "car": 44,
+      "motorcycle": 0,
+      "bus": 0,
+      "truck": 9
+    },
+    "frame": 3900,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.626025,
+    "lng": 77.225188,
+    "vehicle_count": 45,
+    "timestamp": "2026-09-04T13:55:20.204975+00:00",
+    "classes": {
+      "person": 20,
+      "car": 42,
+      "motorcycle": 0,
+      "bus": 0,
+      "truck": 3
+    },
+    "frame": 4050,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.626447,
+    "lng": 77.225755,
+    "vehicle_count": 58,
+    "timestamp": "2026-09-04T13:55:21.062724+00:00",
+    "classes": {
+      "person": 0,
+      "car": 50,
+      "motorcycle": 0,
+      "bus": 3,
+      "truck": 5
+    },
+    "frame": 4200,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.626881,
+    "lng": 77.226384,
+    "vehicle_count": 70,
+    "timestamp": "2026-09-04T13:55:21.904251+00:00",
+    "classes": {
+      "person": 8,
+      "car": 32,
+      "motorcycle": 11,
+      "bus": 24,
+      "truck": 3
+    },
+    "frame": 4350,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.627393,
+    "lng": 77.226996,
+    "vehicle_count": 48,
+    "timestamp": "2026-09-04T13:55:22.756921+00:00",
+    "classes": {
+      "person": 34,
+      "car": 43,
+      "motorcycle": 1,
+      "bus": 0,
+      "truck": 4
+    },
+    "frame": 4500,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.627797,
+    "lng": 77.227529,
+    "vehicle_count": 113,
+    "timestamp": "2026-09-04T13:55:23.607294+00:00",
+    "classes": {
+      "person": 75,
+      "car": 92,
+      "motorcycle": 21,
+      "bus": 0,
+      "truck": 0
+    },
+    "frame": 4650,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.628227,
+    "lng": 77.228245,
+    "vehicle_count": 243,
+    "timestamp": "2026-09-04T13:55:24.416667+00:00",
+    "classes": {
+      "person": 83,
+      "car": 149,
+      "motorcycle": 41,
+      "bus": 21,
+      "truck": 32
+    },
+    "frame": 4800,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.628775,
+    "lng": 77.228748,
+    "vehicle_count": 186,
+    "timestamp": "2026-09-04T13:55:25.217194+00:00",
+    "classes": {
+      "person": 31,
+      "car": 132,
+      "motorcycle": 0,
+      "bus": 4,
+      "truck": 50
+    },
+    "frame": 4950,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.629212,
+    "lng": 77.229461,
+    "vehicle_count": 198,
+    "timestamp": "2026-09-04T13:55:26.003452+00:00",
+    "classes": {
+      "person": 18,
+      "car": 141,
+      "motorcycle": 1,
+      "bus": 22,
+      "truck": 34
+    },
+    "frame": 5100,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.629582,
+    "lng": 77.229943,
+    "vehicle_count": 192,
+    "timestamp": "2026-09-04T13:55:26.791134+00:00",
+    "classes": {
+      "person": 18,
+      "car": 119,
+      "motorcycle": 0,
+      "bus": 34,
+      "truck": 39
+    },
+    "frame": 5250,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.630157,
+    "lng": 77.23059,
+    "vehicle_count": 151,
+    "timestamp": "2026-09-04T13:55:27.581455+00:00",
+    "classes": {
+      "person": 49,
+      "car": 88,
+      "motorcycle": 0,
+      "bus": 2,
+      "truck": 61
+    },
+    "frame": 5400,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.630588,
+    "lng": 77.231187,
+    "vehicle_count": 167,
+    "timestamp": "2026-09-04T13:55:28.399511+00:00",
+    "classes": {
+      "person": 63,
+      "car": 89,
+      "motorcycle": 0,
+      "bus": 24,
+      "truck": 54
+    },
+    "frame": 5550,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.630958,
+    "lng": 77.231724,
+    "vehicle_count": 167,
+    "timestamp": "2026-09-04T13:55:29.178936+00:00",
+    "classes": {
+      "person": 54,
+      "car": 98,
+      "motorcycle": 0,
+      "bus": 30,
+      "truck": 39
+    },
+    "frame": 5700,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.63141,
+    "lng": 77.232457,
+    "vehicle_count": 163,
+    "timestamp": "2026-09-04T13:55:29.976539+00:00",
+    "classes": {
+      "person": 54,
+      "car": 88,
+      "motorcycle": 0,
+      "bus": 26,
+      "truck": 49
+    },
+    "frame": 5850,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.631947,
+    "lng": 77.232967,
+    "vehicle_count": 163,
+    "timestamp": "2026-09-04T13:55:30.757089+00:00",
+    "classes": {
+      "person": 52,
+      "car": 117,
+      "motorcycle": 8,
+      "bus": 6,
+      "truck": 32
+    },
+    "frame": 6000,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.632303,
+    "lng": 77.233597,
+    "vehicle_count": 198,
+    "timestamp": "2026-09-04T13:55:31.556167+00:00",
+    "classes": {
+      "person": 66,
+      "car": 152,
+      "motorcycle": 12,
+      "bus": 16,
+      "truck": 18
+    },
+    "frame": 6150,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.632746,
+    "lng": 77.234196,
+    "vehicle_count": 285,
+    "timestamp": "2026-09-04T13:55:32.370670+00:00",
+    "classes": {
+      "person": 40,
+      "car": 255,
+      "motorcycle": 1,
+      "bus": 8,
+      "truck": 21
+    },
+    "frame": 6300,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.633247,
+    "lng": 77.234838,
+    "vehicle_count": 133,
+    "timestamp": "2026-09-04T13:55:33.181224+00:00",
+    "classes": {
+      "person": 22,
+      "car": 106,
+      "motorcycle": 0,
+      "bus": 4,
+      "truck": 23
+    },
+    "frame": 6450,
+    "simulated_gps": true
+  },
+  {
+    "lat": 28.633243,
+    "lng": 77.234866,
+    "vehicle_count": 4,
+    "timestamp": "2026-09-04T13:55:33.217301+00:00",
+    "classes": {
+      "person": 1,
+      "car": 3,
+      "motorcycle": 0,
+      "bus": 0,
+      "truck": 1
+    },
+    "frame": 6459,
+    "simulated_gps": true
+  }
+]

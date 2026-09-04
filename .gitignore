@@ -1,0 +1,68 @@
+# =============================================
+# Urban Road Intelligence Platform — .gitignore
+# =============================================
+
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+# YOLO model weights (large binary files — download separately)
+# yolov8n.pt          ← keep this since it's in root and small enough
+detection/models/pothole_best.pt
+
+# Generated output videos (large — not for version control)
+detection/output/traffic_annotated.mp4
+detection/output/pothole_annotated.mp4
+
+# Input videos (large — add your own to detection/videos/)
+detection/videos/traffic_video.mp4
+detection/videos/pothole_video.mp4
+
+# YOLO training runs
+runs/
+
+# Node modules
+dashboard/node_modules/
+node_modules/
+
+# Vite build output
+dashboard/dist/
+dashboard/.vite/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Kombai / other tools
+.kombai/
+
+# Detection output alerts (evidence images — generated at runtime)
+# Uncomment to exclude from git:
+# detection/output/alerts/
+
+# Keep shared JSON files (they represent demo data for the repo)
+# shared/live-alerts.json  ← keep
+# shared/traffic-data.json ← keep

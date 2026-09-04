@@ -1,0 +1,18 @@
+# Urban Road Intelligence Platform — Python Dependencies
+# Install with: source .venv/bin/activate && pip install -r requirements.txt
+
+# AI / Computer Vision
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+torch>=2.0.0
+
+# API Server
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.6
+aiofiles>=23.0.0
+
+# Utilities (already included with ultralytics/cv2)
+numpy>=1.24.0
+Pillow>=10.0.0
+requests>=2.31.0
