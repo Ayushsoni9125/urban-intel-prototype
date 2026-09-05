@@ -229,7 +229,7 @@ async def mobile_frame(request: Request):
     # Run YOLO if model is loaded
     if _mobile_model is not None:
         try:
-            results = _mobile_model(frame, verbose=False, conf=0.35)
+            results = _mobile_model(frame, verbose=False, conf=0.20)  # lower threshold = more sensitive
             for result in results:
                 if result.boxes is None:
                     continue
@@ -245,13 +245,14 @@ async def mobile_frame(request: Request):
         except Exception as e:
             print(f"[Mobile] YOLO error: {e}")
 
-    # Overlay GPS and status on frame
-    status_text = f"LIVE | GPS: {lat:.5f}, {lng:.5f}"
-    cv2.putText(annotated_frame, status_text, (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 100), 2)
-    mode_text = f"Potholes detected: {len(detections)}"
-    cv2.putText(annotated_frame, mode_text, (10, 60),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
+    # Overlay GPS, status, and detection mode on frame
+    cv2.rectangle(annotated_frame, (0, 0), (annotated_frame.shape[1], 75), (0, 0, 0), -1)  # dark bar
+    status_text = f"LIVE MOBILE CAM | GPS: {lat:.5f}, {lng:.5f}"
+    cv2.putText(annotated_frame, status_text, (10, 25),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 100), 2)
+    detect_text = f"Detections this frame: {len(detections)} | Model: pothole_best.pt"
+    cv2.putText(annotated_frame, detect_text, (10, 55),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.55, (200, 200, 200), 1)
 
     # Encode annotated frame as JPEG and update stream
     _, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])

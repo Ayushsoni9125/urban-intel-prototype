@@ -480,8 +480,8 @@
       await startCamera();
       startGPS();
 
-      // Send a frame every 1.5 seconds
-      captureInterval = setInterval(captureAndSend, 1500);
+      // Send a frame every 500ms for a smooth live feed
+      captureInterval = setInterval(captureAndSend, 500);
       setStatus('SCANNING', 'active');
       log('Detection started');
 
