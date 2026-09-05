@@ -81,7 +81,6 @@ export default function App() {
 
   // Separate alert types for map markers and stats
   const potholeAlerts     = alerts.filter(a => a.event_type === 'pothole')
-  const waterloggingAlerts = alerts.filter(a => a.event_type === 'waterlogging')
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-surface)' }}>
@@ -92,7 +91,6 @@ export default function App() {
         stats={stats}
         alertCount={alerts.length}
         potholeCount={potholeAlerts.length}
-        waterloggingCount={waterloggingAlerts.length}
       />
 
       {/* Main content */}
@@ -137,7 +135,6 @@ export default function App() {
           <div className="w-full lg:w-1/2 h-[400px] lg:h-full">
             <MapView
               potholeAlerts={potholeAlerts}
-              waterloggingAlerts={waterloggingAlerts}
               trafficData={traffic}
               onMarkerClick={handleAlertSelect}
             />

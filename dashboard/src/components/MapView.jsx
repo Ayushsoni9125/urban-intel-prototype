@@ -55,21 +55,6 @@ const potholeIcon = L.divIcon({
   </div>`,
 })
 
-// Blue icon for waterlogging markers
-const waterloggingIcon = L.divIcon({
-  className: '',
-  iconSize: [26, 26],
-  iconAnchor: [13, 13],
-  popupAnchor: [0, -18],
-  html: `<div style="
-    width:26px;height:26px;background:#0369a1;
-    border:2.5px solid #fff;border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 2px 6px rgba(0,0,0,0.45);cursor:pointer;font-size:13px;">
-    💧
-  </div>`,
-})
-
 
 // ----------------------------------------------------------------
 // HeatmapLayer — isolated per layer type via `key` prop
@@ -151,7 +136,7 @@ const POTHOLE_OPTIONS = {
 const DELHI_CENTER = [28.6139, 77.2090]
 const DEFAULT_ZOOM = 14
 
-export default function MapView({ potholeAlerts, waterloggingAlerts, trafficData, onMarkerClick }) {
+export default function MapView({ potholeAlerts, trafficData, onMarkerClick }) {
   const [activeLayer, setActiveLayer] = useState('traffic')
   const [isFullscreen, setIsFullscreen] = useState(false)
 
@@ -176,7 +161,6 @@ export default function MapView({ potholeAlerts, waterloggingAlerts, trafficData
 
   const showTraffic     = activeLayer === 'traffic'     || activeLayer === 'both'
   const showPothole     = activeLayer === 'pothole'     || activeLayer === 'both'
-  const showWaterlog    = activeLayer === 'waterlogging' || activeLayer === 'both'
 
 
   const btn = (layer) => ({
@@ -226,9 +210,7 @@ export default function MapView({ potholeAlerts, waterloggingAlerts, trafficData
         <button id="layer-pothole" style={btn('pothole')} onClick={() => setActiveLayer('pothole')}>
           🕳 Pothole Heatmap
         </button>
-        <button id="layer-waterlogging" style={btn('waterlogging')} onClick={() => setActiveLayer('waterlogging')}>
-          💧 Waterlogging
-        </button>
+
         <button id="layer-both" style={btn('both')} onClick={() => setActiveLayer('both')}>
           All Layers
         </button>
@@ -356,46 +338,6 @@ export default function MapView({ potholeAlerts, waterloggingAlerts, trafficData
             )
           })}
 
-          {/* Waterlogging markers — blue droplet icons */}
-          {showWaterlog && (waterloggingAlerts || []).map((alert, idx) => {
-            if (!alert.gps) return null
-            const conf = ((alert.confidence || 0) * 100).toFixed(0)
-            const ts = alert.timestamp
-              ? new Date(alert.timestamp).toLocaleString('en-IN')
-              : 'N/A'
-            return (
-              <Marker
-                key={`wl-${alert.id || idx}`}
-                position={[alert.gps.lat, alert.gps.lng]}
-                icon={waterloggingIcon}
-                eventHandlers={{ click: () => onMarkerClick?.(alert) }}
-              >
-                <Popup>
-                  <div style={{ fontSize: 13, minWidth: 190 }}>
-                    <div style={{ fontWeight: 700, color: '#0369a1', marginBottom: 6 }}>
-                      💧 Waterlogging Detected
-                    </div>
-                    <div><b>Confidence:</b> {conf}%</div>
-                    <div><b>Camera:</b> {alert.bus_id || '—'}</div>
-                    <div><b>Region Area:</b> {alert.region_area_px ? `${alert.region_area_px.toLocaleString()} px²` : '—'}</div>
-                    <div><b>Time:</b> {ts}</div>
-                    <div style={{ fontSize: 10, color: '#999', marginTop: 4 }}>
-                      {alert.gps.lat.toFixed(5)}, {alert.gps.lng.toFixed(5)}<br/>
-                      <i>(Simulated GPS)</i>
-                    </div>
-                    {alert.image_path && (
-                      <img
-                        src={alert.image_path}
-                        alt="waterlogging evidence"
-                        style={{ width: '100%', marginTop: 8, borderRadius: 3 }}
-                        onError={e => { e.target.style.display = 'none' }}
-                      />
-                    )}
-                  </div>
-                </Popup>
-              </Marker>
-            )
-          })}
         </MapContainer>
 
         {/* Layer description overlay */}

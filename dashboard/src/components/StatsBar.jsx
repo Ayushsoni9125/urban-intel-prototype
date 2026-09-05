@@ -38,7 +38,7 @@ const StatCard = ({ label, value, subtitle, color }) => (
   </div>
 )
 
-export default function StatsBar({ stats, alertCount, potholeCount, waterloggingCount }) {
+export default function StatsBar({ stats, alertCount, potholeCount }) {
   const totalVehicles = stats?.vehicles_detected ?? 0
   const trafficEvents = stats?.traffic_events ?? 0
   const activeBuses   = stats?.active_buses ?? 0
@@ -58,12 +58,7 @@ export default function StatsBar({ stats, alertCount, potholeCount, waterlogging
         subtitle="Confirmed (YOLO + 3-frame)"
         color={potholeCount > 0 ? 'var(--color-alert-red)' : undefined}
       />
-      <StatCard
-        label="Waterlogging"
-        value={waterloggingCount}
-        subtitle="Standing water regions"
-        color={waterloggingCount > 0 ? '#0369a1' : undefined}
-      />
+
       <StatCard
         label="Traffic Events"
         value={trafficEvents}
