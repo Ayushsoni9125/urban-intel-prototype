@@ -103,20 +103,14 @@ def detect_waterlogging_regions(frame: np.ndarray):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     h, w = frame.shape[:2]
 
-    # ── Mask A: Blue-tinted puddles (sky reflection in clear water) ──────────
-    # Hue 90–135 = blue-cyan range; moderate saturation; mid-range brightness
-    lower_blue = np.array([90,  20,  60])
-    upper_blue = np.array([135, 220, 210])
+    # ── Mask A: Blue-tinted puddles (sky reflection in clear/standing water) ──────────
+    # Hue 85–145 = generous blue-cyan range; low-mod saturation; mid brightness
+    lower_blue = np.array([85,  15,  50])
+    upper_blue = np.array([145, 230, 220])
     mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
 
-    # ── Mask B: Dark standing / muddy water ──────────────────────────────────
-    # Low saturation + low-mid brightness → grayish-dark flat regions
-    lower_dark = np.array([0,   0,  25])
-    upper_dark = np.array([180, 55, 110])
-    mask_dark = cv2.inRange(hsv, lower_dark, upper_dark)
-
-    # Combine both masks
-    combined = cv2.bitwise_or(mask_blue, mask_dark)
+    # Use only the blue reflection mask to avoid confusing dark potholes with water
+    combined = mask_blue
     
     # Ignore the top 45% of the frame (sky, trees, distant buildings, horizon)
     cutoff = int(h * 0.45)
@@ -227,6 +221,10 @@ def detect_waterlogging(input_video: str) -> None:
             break
 
         frame_number += 1
+        
+        # Artificial delay to match YOLO processing speed (roughly 30ms)
+        import time
+        time.sleep(0.03)
 
         if frame_number % SAMPLE_EVERY != 0:
             out.write(frame)
