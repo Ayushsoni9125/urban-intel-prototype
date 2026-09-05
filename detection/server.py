@@ -19,18 +19,26 @@ Run with:
 import json
 import os
 import sys
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import asyncio
 from fastapi import Request
 import subprocess
 import cv2
 import numpy as np
+
+# YOLO model for live mobile detection
+try:
+    from ultralytics import YOLO as _YOLO
+    _POTHOLE_MODEL_PATH = _THIS_DIR if False else None  # resolved after _THIS_DIR is defined
+except ImportError:
+    _YOLO = None
 
 
 # --------------------------------------------------
@@ -43,10 +51,23 @@ ALERTS_FILE = _PROJECT_ROOT / "shared" / "live-alerts.json"
 TRAFFIC_FILE = _PROJECT_ROOT / "shared" / "traffic-data.json"
 IMAGES_DIR = _THIS_DIR / "output" / "alerts"
 VIDEOS_DIR = _THIS_DIR / "videos"
+CAPTURE_PAGE = _THIS_DIR / "capture.html"
 
 # Ensure directories exist
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Load YOLO pothole model for mobile live detection
+_POTHOLE_MODEL_PATH = _THIS_DIR / "models" / "pothole_best.pt"
+_mobile_model = None
+if _YOLO is not None and _POTHOLE_MODEL_PATH.exists():
+    try:
+        _mobile_model = _YOLO(str(_POTHOLE_MODEL_PATH))
+        print("[Mobile] Pothole model loaded for live camera detection.")
+    except Exception as e:
+        print(f"[Mobile] Could not load pothole model: {e}")
+else:
+    print("[Mobile] No pothole model found — mobile detection disabled.")
 (_PROJECT_ROOT / "shared").mkdir(parents=True, exist_ok=True)
 
 # Initialize empty JSON files if missing
@@ -68,13 +89,8 @@ app = FastAPI(
 # --------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],  # Open for tunnel access (mobile camera)
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -179,6 +195,109 @@ async def update_frame(request: Request):
     LATEST_FRAME = await request.body()
     return {"status": "ok"}
 
+
+@app.post("/api/mobile_frame")
+async def mobile_frame(request: Request):
+    """
+    Receive a JPEG frame + real GPS from the mobile capture page.
+    Runs YOLO pothole detection on the frame.
+    If a pothole is detected, saves an alert with REAL GPS coordinates.
+    Updates the live MJPEG feed.
+    """
+    global LATEST_FRAME, _mobile_model
+
+    # Parse multipart form data
+    form = await request.form()
+    image_file = form.get("frame")
+    lat = float(form.get("lat", 0.0))
+    lng = float(form.get("lng", 0.0))
+
+    if image_file is None:
+        raise HTTPException(status_code=400, detail="No frame provided")
+
+    # Read raw JPEG bytes
+    raw_bytes = await image_file.read()
+    np_arr = np.frombuffer(raw_bytes, np.uint8)
+    frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+    if frame is None:
+        raise HTTPException(status_code=400, detail="Could not decode image")
+
+    detections = []
+    annotated_frame = frame.copy()
+
+    # Run YOLO if model is loaded
+    if _mobile_model is not None:
+        try:
+            results = _mobile_model(frame, verbose=False, conf=0.35)
+            for result in results:
+                if result.boxes is None:
+                    continue
+                for box in result.boxes:
+                    confidence = float(box.conf[0])
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    detections.append({"confidence": confidence, "x1": x1, "y1": y1, "x2": x2, "y2": y2})
+                    # Draw detection box on frame
+                    cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                    label = f"POTHOLE {confidence*100:.0f}%"
+                    cv2.putText(annotated_frame, label, (x1, y1 - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+        except Exception as e:
+            print(f"[Mobile] YOLO error: {e}")
+
+    # Overlay GPS and status on frame
+    status_text = f"LIVE | GPS: {lat:.5f}, {lng:.5f}"
+    cv2.putText(annotated_frame, status_text, (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 100), 2)
+    mode_text = f"Potholes detected: {len(detections)}"
+    cv2.putText(annotated_frame, mode_text, (10, 60),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2)
+
+    # Encode annotated frame as JPEG and update stream
+    _, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    LATEST_FRAME = buffer.tobytes()
+
+    # Save alert and evidence image for each confirmed detection
+    saved_alerts = []
+    if detections and lat != 0.0:
+        best = max(detections, key=lambda d: d["confidence"])
+        alert_id = str(uuid.uuid4())
+        timestamp = datetime.now(timezone.utc).isoformat()
+
+        # Save evidence image
+        img_filename = f"mobile_{alert_id[:8]}.jpg"
+        img_path = IMAGES_DIR / img_filename
+        cv2.imwrite(str(img_path), annotated_frame)
+
+        # Load and append to alerts
+        try:
+            existing = json.loads(ALERTS_FILE.read_text(encoding="utf-8").strip() or "[]")
+        except Exception:
+            existing = []
+
+        alert = {
+            "id": alert_id,
+            "event_type": "pothole",
+            "confidence": round(best["confidence"], 3),
+            "timestamp": timestamp,
+            "gps": {"lat": lat, "lng": lng},
+            "bus_id": "MOBILE-CAM",
+            "image_path": img_filename,
+            "source": "mobile_camera",
+        }
+        existing.insert(0, alert)
+        ALERTS_FILE.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+        saved_alerts.append(alert_id)
+        print(f"[Mobile] Pothole saved — GPS: ({lat:.5f}, {lng:.5f}), conf: {best['confidence']:.2f}")
+
+    return {
+        "status": "ok",
+        "detections": len(detections),
+        "alerts_saved": len(saved_alerts),
+        "gps": {"lat": lat, "lng": lng},
+    }
+
+
 async def _frame_generator():
     """Generator for MJPEG stream."""
     global LATEST_FRAME
@@ -188,10 +307,19 @@ async def _frame_generator():
                    b'Content-Type: image/jpeg\r\n\r\n' + LATEST_FRAME + b'\r\n')
         await asyncio.sleep(0.05)  # Max 20 fps
 
+
 @app.get("/api/video_feed")
 async def video_feed():
     """Stream live detection frames to the dashboard."""
     return StreamingResponse(_frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+
+@app.get("/capture", response_class=HTMLResponse)
+async def mobile_capture_page():
+    """Serve the mobile camera capture page."""
+    if CAPTURE_PAGE.exists():
+        return HTMLResponse(content=CAPTURE_PAGE.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>Capture page not found</h1>", status_code=404)
 
 
 @app.get("/api/health")
