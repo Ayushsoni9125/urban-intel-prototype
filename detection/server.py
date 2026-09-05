@@ -187,13 +187,8 @@ async def start_demo():
         [sys.executable, "detection/vehicle_detection.py", "detection/videos/traffic_video.mp4"],
         cwd=str(_PROJECT_ROOT)
     )
-    # Start waterlogging detection on the same video as potholes
-    p3 = subprocess.Popen(
-        [sys.executable, "detection/waterlogging_detection.py", "detection/videos/pothole_video.mp4"],
-        cwd=str(_PROJECT_ROOT)
-    )
-    _running_processes.extend([p1, p2, p3])
-    return {"status": "ok", "message": "Pothole, vehicle, and waterlogging detection started."}
+    _running_processes.extend([p1, p2])
+    return {"status": "ok", "message": "Pothole and vehicle detection started."}
 
 
 @app.post("/api/frame")
