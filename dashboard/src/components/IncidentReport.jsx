@@ -111,14 +111,28 @@ export default function IncidentReport({ alert, onClose }) {
       text('1.  INCIDENT DETAILS', L + 2, y + 5)
       y += 11
 
+      const LABEL_COL = L          // label starts at left margin
+      const VALUE_COL = L + 66     // value starts at 66mm from left
+      const VALUE_W   = R - VALUE_COL  // max width for value text
+      const ROW_PAD   = 2.5        // padding below text before divider
+      const LINE_H    = 5.2        // line height per wrapped line
+
       const field = (label, value, highlight = false) => {
         if (y > PH - 30) { doc.addPage(); y = 20 }
+
+        // Wrap long values
+        const valueLines = doc.splitTextToSize(String(value), VALUE_W)
+        const rowH = valueLines.length * LINE_H + ROW_PAD
+
         setFont('bold', 9, [71, 85, 105])
-        text(label, L, y)
+        doc.text(label, LABEL_COL, y)
+
         setFont(highlight ? 'bold' : 'normal', 9, highlight ? [220, 38, 38] : [15, 23, 42])
-        text(String(value), L + 60, y)
-        drawLine(L, y + 2, R, y + 2)
-        y += 9
+        doc.text(valueLines, VALUE_COL, y)
+
+        y += rowH
+        drawLine(L, y, R, y)
+        y += 3.5
       }
 
       field('Incident ID',         incidentId)
@@ -222,8 +236,9 @@ export default function IncidentReport({ alert, onClose }) {
       setFont('normal', 8.5, [30, 41, 59])
       for (const step of steps) {
         if (y > PH - 30) { doc.addPage(); y = 20 }
-        text(step, L + 4, y)
-        y += 7
+        const stepLines = doc.splitTextToSize(step, R - L - 8)
+        doc.text(stepLines, L + 4, y)
+        y += stepLines.length * 5.5 + 1.5
       }
 
       y += 4
