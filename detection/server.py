@@ -187,8 +187,13 @@ async def start_demo():
         [sys.executable, "detection/vehicle_detection.py", "detection/videos/traffic_video.mp4"],
         cwd=str(_PROJECT_ROOT)
     )
-    _running_processes.extend([p1, p2])
-    return {"status": "ok", "message": "Pothole and vehicle detection started."}
+    # Start waterlogging detection on the same video as potholes
+    p3 = subprocess.Popen(
+        [sys.executable, "detection/waterlogging_detection.py", "detection/videos/pothole_video.mp4"],
+        cwd=str(_PROJECT_ROOT)
+    )
+    _running_processes.extend([p1, p2, p3])
+    return {"status": "ok", "message": "Pothole, vehicle, and waterlogging detection started."}
 
 
 @app.post("/api/frame")
@@ -196,6 +201,14 @@ async def update_frame(request: Request):
     """Receive a JPEG frame from the detection script."""
     global LATEST_FRAME
     LATEST_FRAME = await request.body()
+    return {"status": "ok"}
+
+
+@app.post("/api/frame_waterlogging")
+async def update_frame_waterlogging(request: Request):
+    """Receive a JPEG frame from the waterlogging detection script."""
+    global LATEST_WATERLOGGING_FRAME
+    LATEST_WATERLOGGING_FRAME = await request.body()
     return {"status": "ok"}
 
 

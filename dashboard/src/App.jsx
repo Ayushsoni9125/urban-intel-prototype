@@ -133,11 +133,11 @@ export default function App() {
                <div style={{ flex: 1, position: 'relative' }}>
                  <img 
                     src={`${API_BASE}/api/video_feed_waterlogging`} 
-                    alt="Waterlogging Mobile Feed"
+                    alt="Waterlogging Feed"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                  />
                  <div style={{ position: 'absolute', bottom: 10, left: 10, color: 'white', background: 'rgba(3,105,161,0.8)', padding: '4px 8px', fontSize: 10, fontWeight: 'bold', borderRadius: 3 }}>
-                   Waterlogging Mobile Cam
+                   Waterlogging AI Feed
                  </div>
                </div>
              </div>

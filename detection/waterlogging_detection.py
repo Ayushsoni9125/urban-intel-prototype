@@ -325,7 +325,7 @@ def detect_waterlogging(input_video: str) -> None:
         if ret_enc:
             def send_frame(data):
                 try:
-                    requests.post('http://localhost:8000/api/frame',
+                    requests.post('http://localhost:8000/api/frame_waterlogging',
                                   data=data, timeout=0.1)
                 except Exception:
                     pass
