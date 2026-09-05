@@ -258,8 +258,8 @@
   let lastFpsTime = Date.now();
   let fpsFrames = 0;
 
-  // Backend URL — auto-detects current host (works for tunnel and localhost)
-  const BACKEND = window.location.protocol + '//' + window.location.hostname + ':8000';
+  // Backend URL — same host the page is served from (works for tunnel and localhost)
+  const BACKEND = window.location.origin;
 
   const cam = document.getElementById('cam');
   const canvas = document.getElementById('snapshot');
