@@ -144,7 +144,7 @@ _running_processes = []
 @app.post("/api/reset")
 async def reset_demo():
     """Reset the demo state."""
-    global LATEST_FRAME, _running_processes
+    global LATEST_FRAME, LATEST_WATERLOGGING_FRAME, _running_processes
     
     # Kill any running scripts
     for p in _running_processes:

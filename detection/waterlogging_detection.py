@@ -51,13 +51,13 @@ SAMPLE_EVERY = 5
 TEMPORAL_CONFIRM_COUNT = 3
 
 # Minimum contour area in pixels to count as waterlogging (filters tiny reflections)
-MIN_AREA_PX = 6000
+MIN_AREA_PX = 12000
 
 # Minimum width of waterlogging region (px) — rules out vertical drains etc.
-MIN_WIDTH_PX = 60
+MIN_WIDTH_PX = 80
 
-# Aspect ratio range [w/h] for a valid waterlogging region
-MIN_ASPECT = 0.4
+# Aspect ratio range [w/h] for a valid waterlogging region (puddles are wide)
+MIN_ASPECT = 1.5
 MAX_ASPECT = 8.0
 
 # Simulated GPS — same Delhi area, slightly offset so pins don't overlap with potholes
@@ -117,6 +117,10 @@ def detect_waterlogging_regions(frame: np.ndarray):
 
     # Combine both masks
     combined = cv2.bitwise_or(mask_blue, mask_dark)
+    
+    # Ignore the top 45% of the frame (sky, trees, distant buildings, horizon)
+    cutoff = int(h * 0.45)
+    combined[:cutoff, :] = 0
 
     # ── Morphological cleanup ─────────────────────────────────────────────────
     # Close: fills small gaps inside water region
