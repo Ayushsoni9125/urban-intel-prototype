@@ -201,6 +201,41 @@
 
     .log-entry { line-height: 1.6; }
     .log-entry.pothole { color: #f85149; font-weight: 600; }
+    .log-entry.duplicate { color: #e3b341; font-weight: 600; }
+
+    /* Toast popup */
+    #toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 999;
+      max-width: 90vw;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    #toast.type-duplicate {
+      background: #2d2a00;
+      border: 1px solid #e3b341;
+      color: #e3b341;
+    }
+    #toast.type-saved {
+      background: #0d4429;
+      border: 1px solid #3fb950;
+      color: #3fb950;
+    }
   </style>
 </head>
 <body>
@@ -222,6 +257,9 @@
   </div>
 </div>
 
+<!-- Toast notification -->
+<div id="toast"></div>
+
 <div class="bottom-panel">
   <div class="stats-row">
     <div class="stat-card">
@@ -233,8 +271,8 @@
       <div class="stat-label">Potholes Found</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value" id="stat-fps">0</div>
-      <div class="stat-label">FPS</div>
+      <div class="stat-value" id="stat-duplicates" style="color:#e3b341">0</div>
+      <div class="stat-label">Already Reported</div>
     </div>
   </div>
 
@@ -255,8 +293,10 @@
   let gpsWatchId = null;
   let frameCount = 0;
   let potholeCount = 0;
+  let duplicateCount = 0;
   let lastFpsTime = Date.now();
   let fpsFrames = 0;
+  let toastTimer = null;
 
   // Backend URL — same host the page is served from (works for tunnel and localhost)
   const BACKEND = window.location.origin;
@@ -266,10 +306,19 @@
   const ctx = canvas.getContext('2d');
   const flash = document.getElementById('flash');
   const statusPill = document.getElementById('status-pill');
+  const toast = document.getElementById('toast');
   const btnStart = document.getElementById('btn-start');
   const btnStop = document.getElementById('btn-stop');
   const gpsDisplay = document.getElementById('gps-display');
   const logFeed = document.getElementById('log-feed');
+
+  // ─── Toast helper ─────────────────────────────────────────
+  function showToast(msg, type = 'saved') {
+    if (toastTimer) clearTimeout(toastTimer);
+    toast.textContent = msg;
+    toast.className = `show type-${type}`;
+    toastTimer = setTimeout(() => { toast.className = ''; }, 3500);
+  }
 
   // ─── Utility ─────────────────────────────────────────────
   function log(msg, type = '') {
@@ -396,17 +445,26 @@
         }
 
         if (data.detections > 0) {
-          potholeCount += data.alerts_saved;
-          document.getElementById('stat-potholes').textContent = potholeCount;
-
-          // Flash red border
-          flash.classList.add('show');
-          setTimeout(() => flash.classList.remove('show'), 300);
-
-          if (data.alerts_saved > 0) {
-            log(`🚨 POTHOLE SAVED — GPS: (${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)})`, 'pothole');
+          if (data.duplicate) {
+            // Duplicate — show yellow toast, don't increment pothole count
+            duplicateCount++;
+            document.getElementById('stat-duplicates').textContent = duplicateCount;
+            showToast(`⚠ Pothole already reported here (${data.nearby_count} detections at this spot)`, 'duplicate');
+            log(`⚠ DUPLICATE — already reported ${data.nearby_count}× at (${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)})`, 'duplicate');
           } else {
-            log(`⚠ Pothole detected (not saved — GPS invalid)`);
+            potholeCount += data.alerts_saved;
+            document.getElementById('stat-potholes').textContent = potholeCount;
+
+            // Flash red border
+            flash.classList.add('show');
+            setTimeout(() => flash.classList.remove('show'), 300);
+
+            if (data.alerts_saved > 0) {
+              showToast(`🚨 New pothole saved to dashboard!`, 'saved');
+              log(`🚨 POTHOLE SAVED — GPS: (${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)})`, 'pothole');
+            } else {
+              log(`⚠ Pothole detected (not saved — GPS invalid)`);
+            }
           }
         }
       } catch (err) {

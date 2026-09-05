@@ -257,43 +257,78 @@ async def mobile_frame(request: Request):
     _, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
     LATEST_FRAME = buffer.tobytes()
 
+    # --------------------------------------------------
+    # Deduplication — skip if 3+ alerts already near this GPS
+    # --------------------------------------------------
+    DUPLICATE_THRESHOLD = 3    # max allowed detections per location
+    NEARBY_RADIUS_M    = 50    # metres — if within this radius, treat as same spot
+
+    def _haversine_m(lat1, lng1, lat2, lng2) -> float:
+        """Return distance in metres between two GPS points."""
+        import math
+        R = 6_371_000  # Earth radius in metres
+        phi1, phi2 = math.radians(lat1), math.radians(lat2)
+        dphi = math.radians(lat2 - lat1)
+        dlam = math.radians(lng2 - lng1)
+        a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlam/2)**2
+        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
     # Save alert and evidence image for each confirmed detection
     saved_alerts = []
+    is_duplicate  = False
+    nearby_count  = 0
+
     if detections and lat != 0.0:
-        best = max(detections, key=lambda d: d["confidence"])
-        alert_id = str(uuid.uuid4())
-        timestamp = datetime.now(timezone.utc).isoformat()
-
-        # Save evidence image
-        img_filename = f"mobile_{alert_id[:8]}.jpg"
-        img_path = IMAGES_DIR / img_filename
-        cv2.imwrite(str(img_path), annotated_frame)
-
-        # Load and append to alerts
+        # Load existing alerts once
         try:
             existing = json.loads(ALERTS_FILE.read_text(encoding="utf-8").strip() or "[]")
         except Exception:
             existing = []
 
-        alert = {
-            "id": alert_id,
-            "event_type": "pothole",
-            "confidence": round(best["confidence"], 3),
-            "timestamp": timestamp,
-            "gps": {"lat": lat, "lng": lng},
-            "bus_id": "MOBILE-CAM",
-            "image_path": img_filename,
-            "source": "mobile_camera",
-        }
-        existing.insert(0, alert)
-        ALERTS_FILE.write_text(json.dumps(existing, indent=2), encoding="utf-8")
-        saved_alerts.append(alert_id)
-        print(f"[Mobile] Pothole saved — GPS: ({lat:.5f}, {lng:.5f}), conf: {best['confidence']:.2f}")
+        # Count how many pothole alerts are within NEARBY_RADIUS_M
+        nearby_alerts = [
+            a for a in existing
+            if a.get("event_type") == "pothole"
+            and a.get("gps")
+            and _haversine_m(lat, lng, a["gps"]["lat"], a["gps"]["lng"]) <= NEARBY_RADIUS_M
+        ]
+        nearby_count = len(nearby_alerts)
+
+        if nearby_count >= DUPLICATE_THRESHOLD:
+            # Already detected here enough times — skip saving
+            is_duplicate = True
+            print(f"[Mobile] Duplicate skipped — {nearby_count} alerts within {NEARBY_RADIUS_M}m of ({lat:.5f}, {lng:.5f})")
+        else:
+            best = max(detections, key=lambda d: d["confidence"])
+            alert_id = str(uuid.uuid4())
+            timestamp = datetime.now(timezone.utc).isoformat()
+
+            # Save evidence image
+            img_filename = f"mobile_{alert_id[:8]}.jpg"
+            img_path = IMAGES_DIR / img_filename
+            cv2.imwrite(str(img_path), annotated_frame)
+
+            alert = {
+                "id": alert_id,
+                "event_type": "pothole",
+                "confidence": round(best["confidence"], 3),
+                "timestamp": timestamp,
+                "gps": {"lat": lat, "lng": lng},
+                "bus_id": "MOBILE-CAM",
+                "image_path": img_filename,
+                "source": "mobile_camera",
+            }
+            existing.insert(0, alert)
+            ALERTS_FILE.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+            saved_alerts.append(alert_id)
+            print(f"[Mobile] Pothole saved — GPS: ({lat:.5f}, {lng:.5f}), conf: {best['confidence']:.2f}")
 
     return {
         "status": "ok",
         "detections": len(detections),
         "alerts_saved": len(saved_alerts),
+        "duplicate": is_duplicate,
+        "nearby_count": nearby_count,
         "gps": {"lat": lat, "lng": lng},
     }
 
