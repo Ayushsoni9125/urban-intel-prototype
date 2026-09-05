@@ -5,9 +5,10 @@
  */
 
 const EVENT_LABELS = {
-  pothole: { label: 'Pothole', color: '#c53030', bg: '#fff5f5' },
-  vehicle_congestion: { label: 'Congestion', color: '#c05621', bg: '#fffaf0' },
-  traffic_density: { label: 'Traffic', color: '#2c5282', bg: '#ebf8ff' },
+  pothole:            { label: 'Pothole',      color: '#c53030', bg: '#fff5f5' },
+  waterlogging:       { label: 'Waterlogging', color: '#0369a1', bg: '#e0f2fe' },
+  vehicle_congestion: { label: 'Congestion',   color: '#c05621', bg: '#fffaf0' },
+  traffic_density:    { label: 'Traffic',      color: '#2c5282', bg: '#ebf8ff' },
 }
 
 const STATUS_CONFIG = ['New', 'Reviewed', 'Resolved']

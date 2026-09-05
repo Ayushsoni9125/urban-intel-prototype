@@ -79,16 +79,21 @@ export default function App() {
     setReportAlert(null)
   }
 
-  // Separate pothole alerts for map markers
-  const potholeAlerts = alerts.filter(a => a.event_type === 'pothole')
+  // Separate alert types for map markers and stats
+  const potholeAlerts     = alerts.filter(a => a.event_type === 'pothole')
+  const waterloggingAlerts = alerts.filter(a => a.event_type === 'waterlogging')
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-surface)' }}>
       {/* Header */}
       <Header apiStatus={apiStatus} lastUpdated={lastUpdated} />
 
-      {/* Stats Bar */}
-      <StatsBar stats={stats} alertCount={alerts.length} potholeCount={potholeAlerts.length} />
+      <StatsBar
+        stats={stats}
+        alertCount={alerts.length}
+        potholeCount={potholeAlerts.length}
+        waterloggingCount={waterloggingAlerts.length}
+      />
 
       {/* Main content */}
       <main className="flex-1 flex flex-col gap-0">
@@ -130,6 +135,7 @@ export default function App() {
           <div className="w-full lg:w-1/2 h-[400px] lg:h-full">
             <MapView
               potholeAlerts={potholeAlerts}
+              waterloggingAlerts={waterloggingAlerts}
               trafficData={traffic}
               onMarkerClick={handleAlertSelect}
             />
