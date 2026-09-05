@@ -1,0 +1,706 @@
+================================================================================
+  URBAN ROAD INTELLIGENCE PLATFORM — TECHNICAL DOCUMENTATION
+  SIH 2026 Prototype | Complete System Reference
+================================================================================
+
+Prepared for: Ayush Soni
+Project Repo: https://github.com/Ayushsoni9125/urban-intel-prototype
+
+
+================================================================================
+SECTION 1: PROJECT OVERVIEW
+================================================================================
+
+This project is a real-time urban road intelligence platform that:
+  1. Detects potholes from a dashcam video feed using AI (YOLO)
+  2. Detects vehicles, traffic density, and congestion from a traffic camera feed
+  3. Displays all detections live on a government-style control room dashboard
+  4. Plots real GPS pins on a map for every detected pothole
+  5. Allows a mobile phone to act as a live dashcam for real-world testing
+  6. Generates formal Incident Reports for every pothole alert
+
+The system simulates a complete Smart City infrastructure — the kind used by
+municipal corporations (NDMC, BBMP, BMC) for road condition monitoring.
+
+
+================================================================================
+SECTION 2: TECHNOLOGY STACK
+================================================================================
+
+FRONTEND (Dashboard)
+--------------------
+  - React 18              → UI component framework
+  - Vite 8                → Fast development server and build tool
+  - Tailwind CSS v4       → Utility-first CSS styling
+  - Leaflet.js v1.9.4     → Interactive map rendering
+  - Leaflet.heat plugin   → Heatmap layer for traffic density visualization
+  - Google Fonts (Inter)  → Typography
+
+BACKEND (API Server)
+--------------------
+  - Python 3.11           → Core programming language
+  - FastAPI               → REST API framework (async, high performance)
+  - Uvicorn               → ASGI server to run FastAPI
+  - OpenCV (cv2)          → Image processing, frame decoding, annotation
+  - NumPy                 → Array operations for image data
+
+AI / COMPUTER VISION
+--------------------
+  - Ultralytics YOLOv8n   → Lightweight YOLO model for vehicle detection
+                            (Model file: yolov8n.pt, ~6.5 MB)
+  - Custom Pothole Model  → Fine-tuned YOLO model trained on Indian road pothole
+                            dataset (Model file: detection/models/pothole_best.pt)
+                            Trained to detect potholes specifically from dashcam angle
+
+DATA STORAGE
+------------
+  - JSON files (NO database) → Simple flat-file storage as per project constraints
+      shared/live-alerts.json   → All detected alerts (potholes, congestion)
+      shared/traffic-data.json  → Traffic density data points for heatmap
+
+NETWORKING / TUNNELING
+----------------------
+  - Cloudflare Tunnel (npx cloudflared)  → Expose local server publicly for free
+  - localtunnel (npx localtunnel)        → Alternative tunnel option
+
+DEPLOYMENT / CONTAINERIZATION
+------------------------------
+  - Docker + Dockerfile   → Packages entire app into one container
+  - Hugging Face Spaces   → Free cloud hosting for AI demos (16GB RAM, 2 vCPU)
+
+DEVELOPMENT TOOLS
+-----------------
+  - Git + GitHub          → Version control
+  - Python venv (.venv)   → Isolated Python environment
+
+
+================================================================================
+SECTION 3: REPOSITORY FOLDER STRUCTURE
+================================================================================
+
+urban-intel-prototype/
+│
+├── dashboard/                        ← React frontend application
+│   ├── index.html                    ← HTML entry point (loads fonts, Leaflet CSS)
+│   ├── vite.config.js               ← Vite config with API proxy settings
+│   └── src/
+│       ├── main.jsx                  ← React app bootstrap
+│       ├── App.jsx                   ← ROOT COMPONENT — all state, layout, polling
+│       ├── index.css                 ← Global CSS variables and base styles
+│       ├── lib/
+│       │   └── leaflet-heat.js      ← Heatmap plugin (bundled locally)
+│       └── components/
+│           ├── Header.jsx           ← Top navigation bar
+│           ├── StatsBar.jsx         ← Summary stat cards (pothole count, vehicles)
+│           ├── MapView.jsx          ← Leaflet map with pothole markers + heatmap
+│           ├── AlertTable.jsx       ← Sortable table of all detected alerts
+│           ├── DetectionPreview.jsx ← Evidence image viewer for selected alert
+│           └── IncidentReport.jsx   ← Modal: generate PDF-style incident report
+│
+├── detection/                        ← Python AI backend
+│   ├── server.py                    ← MAIN FASTAPI SERVER — all API endpoints
+│   ├── pothole_detection.py         ← YOLO pothole detection on video file
+│   ├── vehicle_detection.py         ← YOLO vehicle/traffic detection on video file
+│   ├── alert_generator.py           ← Helper: create + save alerts to JSON files
+│   ├── capture.html                 ← Mobile camera page (served at /capture)
+│   ├── models/
+│   │   └── pothole_best.pt          ← Custom YOLO pothole detection model weights
+│   ├── videos/
+│   │   ├── pothole_video.mp4        ← Demo dashcam video for pothole detection
+│   │   └── traffic_video.mp4        ← Demo traffic camera video
+│   └── output/
+│       └── alerts/                  ← Saved evidence JPEG images per detection
+│
+├── shared/                           ← JSON data files (shared between scripts)
+│   ├── live-alerts.json             ← All pothole/congestion alerts
+│   └── traffic-data.json            ← Traffic density/heatmap data points
+│
+├── yolov8n.pt                        ← Pre-trained YOLOv8 nano model (vehicle det.)
+├── reset_demo.py                     ← Clears JSON files for fresh demo start
+├── requirements.txt                  ← Python dependencies
+├── Dockerfile                        ← Docker build instructions
+└── .venv/                            ← Python virtual environment
+
+
+================================================================================
+SECTION 4: SYSTEM ARCHITECTURE
+================================================================================
+
+The system uses a PRODUCER → SHARED FILES → CONSUMER architecture.
+
+                 ┌─────────────────────────────────────┐
+                 │          USER'S MAC (Local)          │
+                 │                                      │
+  ┌──────────────┼──────────────────────────────────────┼──────────┐
+  │              │                                      │          │
+  │  ┌───────────▼──────────────┐    ┌─────────────────▼──────┐   │
+  │  │  pothole_detection.py    │    │  vehicle_detection.py  │   │
+  │  │  (PRODUCER)              │    │  (PRODUCER)            │   │
+  │  │                          │    │                        │   │
+  │  │  • Reads pothole_video   │    │  • Reads traffic_video │   │
+  │  │  • Runs YOLO every 5th   │    │  • Runs YOLOv8n        │   │
+  │  │    frame                 │    │  • Tracks vehicles     │   │
+  │  │  • Saves evidence JPEGs  │    │  • Builds density data │   │
+  │  │  • Writes to             │    │  • Writes to           │   │
+  │  │    live-alerts.json      │    │    traffic-data.json   │   │
+  │  │  • POSTs annotated       │    │                        │   │
+  │  │    frames to /api/frame  │    │                        │   │
+  │  └──────────────────────────┘    └────────────────────────┘   │
+  │            │                                │                  │
+  │            ▼                                ▼                  │
+  │  ┌─────────────────────────────────────────────────────────┐   │
+  │  │             shared/ JSON Files (DATA STORE)             │   │
+  │  │                                                         │   │
+  │  │   live-alerts.json          traffic-data.json           │   │
+  │  │   [{                        [{                          │   │
+  │  │     id, event_type,           lat, lng,                 │   │
+  │  │     confidence,               vehicle_count,            │   │
+  │  │     timestamp,                classes: {car:5, ...},   │   │
+  │  │     gps: {lat, lng},          timestamp                 │   │
+  │  │     bus_id, image_path        }]                        │   │
+  │  │   }]                                                    │   │
+  │  └─────────────────────────────────────────────────────────┘   │
+  │            │                                │                  │
+  │            ▼                                ▼                  │
+  │  ┌─────────────────────────────────────────────────────────┐   │
+  │  │            server.py — FastAPI (port 8000)              │   │
+  │  │                (CONSUMER + ORCHESTRATOR)                │   │
+  │  │                                                         │   │
+  │  │  GET /api/alerts    → reads live-alerts.json            │   │
+  │  │  GET /api/traffic   → reads traffic-data.json           │   │
+  │  │  GET /api/stats     → aggregates summary numbers        │   │
+  │  │  GET /api/health    → system status check               │   │
+  │  │  GET /api/video_feed → MJPEG stream of latest frame     │   │
+  │  │  POST /api/frame    → receive frame from script         │   │
+  │  │  POST /api/mobile_frame → receive frame from phone      │   │
+  │  │  POST /api/start    → spawn detection subprocesses      │   │
+  │  │  POST /api/reset    → kill subprocesses, clear state    │   │
+  │  │  GET /capture       → serve mobile camera HTML page     │   │
+  │  │  GET /images/{file} → serve evidence JPEG images        │   │
+  │  └────────────────────────────────┬────────────────────────┘   │
+  │                                   │                            │
+  │                    ┌──────────────▼──────────────┐             │
+  │                    │   Cloudflare Tunnel         │             │
+  │                    │   (npx cloudflared)         │             │
+  │                    │   localhost:8000 ←→ Public  │             │
+  │                    │   URL on internet           │             │
+  │                    └──────────────┬──────────────┘             │
+  │                                   │                            │
+  └─────────────────────────────────────────────────────────────── ┘
+                                      │
+          ┌───────────────────────────┼───────────────────────────┐
+          │                           │                           │
+          ▼                           ▼                           ▼
+  ┌───────────────┐         ┌─────────────────┐        ┌──────────────────┐
+  │ React Dashboard│        │ Mobile Phone    │        │ Judges / Viewers │
+  │ (port 5174)   │        │ /capture page   │        │ (any browser)    │
+  │               │        │                 │        │                  │
+  │ Polls every   │        │ Opens rear cam  │        │ Opens Cloudflare │
+  │ 1.5 seconds   │        │ Gets GPS        │        │ tunnel URL       │
+  │               │        │ Sends frame     │        │ Sees live dash   │
+  │ Shows:        │        │ every 500ms     │        │                  │
+  │ • MJPEG feed  │        │ Shows toast     │        │                  │
+  │ • Leaflet map │        │ on detection    │        │                  │
+  │ • Alert table │        │                 │        │                  │
+  │ • Stats cards │        │                 │        │                  │
+  └───────────────┘        └─────────────────┘        └──────────────────┘
+
+
+================================================================================
+SECTION 5: DATA FLOW — DETAILED STEP BY STEP
+================================================================================
+
+--- FLOW A: VIDEO-BASED DETECTION (Primary Demo Mode) ---
+
+Step 1: User opens dashboard at http://localhost:5174
+Step 2: User clicks "START AI" button
+Step 3: Dashboard POSTs to http://localhost:8000/api/start
+Step 4: server.py spawns TWO subprocesses:
+          subprocess.Popen(["python", "detection/pothole_detection.py", "...mp4"])
+          subprocess.Popen(["python", "detection/vehicle_detection.py", "...mp4"])
+
+Step 5 (Pothole Detection Process):
+  5a. Load custom YOLO model (pothole_best.pt)
+  5b. Read video frame by frame
+  5c. Process every 5th frame (SAMPLE_EVERY = 5) for speed
+  5d. Run YOLO inference at confidence threshold 0.40
+  5e. If pothole detected in 3 CONSECUTIVE frames (temporal confirmation):
+        → Save evidence JPEG to detection/output/alerts/
+        → Create alert dict: {id, event_type, confidence, gps, bus_id, image_path}
+        → Append to shared/live-alerts.json
+  5f. Draw bounding box on frame with label "POTHOLE XX%"
+  5g. POST annotated JPEG frame to http://localhost:8000/api/frame
+  5h. Repeat until video ends
+
+Step 6 (Vehicle Detection Process):
+  6a. Load YOLOv8n general model (yolov8n.pt)
+  6b. Target classes: person(0), car(2), motorcycle(3), bus(5), truck(7)
+  6c. Use SimpleCentroidTracker to count UNIQUE vehicles
+  6d. Every 9 sampled frames (~1.5 seconds), save traffic density point:
+        {lat, lng, vehicle_count, classes: {car:X, bus:Y}, timestamp}
+  6e. If vehicle_count > 50 → create congestion alert
+  6f. Write to shared/traffic-data.json
+
+Step 7 (Dashboard Polling Loop - every 1.5 seconds):
+  7a. GET /api/alerts → get all alerts → render in AlertTable
+  7b. GET /api/traffic → get density points → render heatmap on Leaflet
+  7c. GET /api/stats → get counts → update stat cards in header
+  7d. MJPEG <img> tag → continuously streaming from /api/video_feed
+        server.py reads LATEST_FRAME (set by /api/frame POST)
+        Sends as multipart/x-mixed-replace at max 20fps
+
+Step 8 (User interactions):
+  8a. Click alert row → select alert → DetectionPreview shows evidence image
+  8b. Click "Generate Report" → IncidentReport modal with GPS, timestamp, photo
+  8c. Click map marker → same alert selected, table row highlighted
+  8d. Click "RESET" → kills both subprocesses, clears LATEST_FRAME, resets JSONs
+
+
+--- FLOW B: MOBILE CAMERA DETECTION (Live Demo Mode) ---
+
+Step 1: Start Cloudflare tunnel: npx cloudflared tunnel --url http://localhost:8000
+Step 2: Open https://TUNNEL-URL.trycloudflare.com/capture on phone
+Step 3: capture.html is served by FastAPI's GET /capture endpoint
+Step 4: Page requests camera permission (rear camera via facingMode:'environment')
+Step 5: Page requests GPS permission (navigator.geolocation.watchPosition)
+Step 6: User taps "START DETECTION"
+Step 7 (Every 500ms):
+  7a. Capture current camera frame to <canvas>
+  7b. Convert canvas to JPEG blob (quality 0.8)
+  7c. Create FormData: { frame: blob, lat: X, lng: Y }
+  7d. POST to https://TUNNEL-URL.trycloudflare.com/api/mobile_frame
+  7e. Cloudflare routes this to localhost:8000/api/mobile_frame
+
+Step 8 (server.py /api/mobile_frame handler):
+  8a. Decode JPEG bytes using numpy + cv2.imdecode()
+  8b. Run pothole model at confidence 0.20 (more sensitive)
+  8c. Draw red bounding box + label on annotated_frame for each detection
+  8d. Draw dark info bar at top: GPS coordinates + detection count
+  8e. Update LATEST_FRAME with annotated JPEG → dashboard MJPEG feed updates
+  8f. DEDUPLICATION CHECK:
+        Load all existing pothole alerts from live-alerts.json
+        For each existing alert, calculate Haversine distance to current GPS
+        Count alerts within 100 metres of current position
+        If count >= 3 → set is_duplicate=True, skip saving
+        If count < 3 → save new alert with REAL GPS coordinates
+  8g. Return JSON: {detections, alerts_saved, duplicate, nearby_count, gps}
+
+Step 9 (Mobile page response handling):
+  9a. If data.detections > 0 AND data.duplicate == true:
+        Show YELLOW toast: "⚠ Pothole already reported here (N detections)"
+        Increment "Already Reported" counter
+  9b. If data.detections > 0 AND data.duplicate == false AND alerts_saved > 0:
+        Show GREEN toast: "🚨 New pothole saved to dashboard!"
+        Flash red border around camera
+        Increment "Potholes Found" counter
+  9c. Dashboard (on Mac) auto-updates in next 1.5s poll showing new alert + GPS pin
+
+
+================================================================================
+SECTION 6: API ENDPOINTS REFERENCE
+================================================================================
+
+BASE URL: http://localhost:8000 (or Cloudflare tunnel URL)
+
+┌─────────────────────────────┬────────────┬──────────────────────────────────────┐
+│ ENDPOINT                    │ METHOD     │ DESCRIPTION                          │
+├─────────────────────────────┼────────────┼──────────────────────────────────────┤
+│ /api/health                 │ GET        │ System status, counts                │
+│ /api/alerts                 │ GET        │ All alerts, newest first             │
+│ /api/traffic                │ GET        │ Traffic density array                │
+│ /api/stats                  │ GET        │ Aggregated summary numbers           │
+│ /api/video_feed             │ GET        │ MJPEG stream (multipart/x-mixed-…)   │
+│ /api/frame                  │ POST       │ Receive frame from script (raw body) │
+│ /api/mobile_frame           │ POST       │ Receive frame + GPS from phone       │
+│ /api/start                  │ POST       │ Launch detection subprocesses        │
+│ /api/reset                  │ POST       │ Kill processes, reset state          │
+│ /images/{filename}          │ GET        │ Serve evidence JPEG from output/     │
+│ /capture                    │ GET        │ Mobile camera capture HTML page      │
+└─────────────────────────────┴────────────┴──────────────────────────────────────┘
+
+
+================================================================================
+SECTION 7: AI MODELS EXPLAINED
+================================================================================
+
+MODEL 1: YOLOv8n (yolov8n.pt)
+------------------------------
+  Full name  : You Only Look Once version 8 nano
+  Purpose    : Vehicle detection and counting
+  Source     : Pre-trained on COCO dataset (80 classes)
+  Size       : ~6.5 MB (lightweight, runs on CPU)
+  Classes used from COCO:
+    Class 0  → person
+    Class 2  → car
+    Class 3  → motorcycle
+    Class 5  → bus
+    Class 7  → truck
+  Confidence threshold: 0.35 (35%)
+  Architecture: Single-stage object detector
+  Speed: Can process ~10-15 fps on MacBook Air M-series CPU
+
+MODEL 2: pothole_best.pt (Custom Fine-tuned YOLO)
+--------------------------------------------------
+  Purpose    : Pothole detection specifically
+  Trained on : Indian road pothole image dataset
+  Camera angle: Trained for dashcam perspective (~1-2m above road, looking down)
+  Size       : Similar to YOLOv8n (~6MB)
+  Confidence threshold for video: 0.40 (40%)
+  Confidence threshold for mobile: 0.20 (20% — more sensitive for live demo)
+  IMPORTANT  : Will NOT detect potholes on smooth floors or walls.
+               Must be pointed at actual rough road surface to trigger.
+
+HOW YOLO WORKS (simplified):
+  1. Input: Image (any size, resized internally to 640x640)
+  2. Backbone: CNN extracts feature maps at multiple scales
+  3. Head: Predicts bounding boxes as [x, y, w, h, confidence, class]
+  4. NMS: Non-maximum suppression removes duplicate overlapping boxes
+  5. Output: List of {class, confidence, x1, y1, x2, y2} per detection
+
+
+================================================================================
+SECTION 8: TEMPORAL CONFIRMATION LOGIC (Anti False-Positive)
+================================================================================
+
+Problem: YOLO can sometimes detect a pothole in one frame by mistake (false positive)
+Solution: Only confirm a pothole if it appears in 3 CONSECUTIVE processed frames
+
+Code flow in pothole_detection.py:
+  - consecutive_count = 0
+  - For each sampled frame:
+      IF pothole detected: consecutive_count += 1
+      ELSE: consecutive_count = 0
+      IF consecutive_count >= 3:
+          → CONFIRMED POTHOLE → save alert + evidence image
+          → reset consecutive_count
+
+This means: a pothole must be visible for (3 frames × 5 skip × ~30fps ≈ 0.5 seconds)
+before it is saved. Random noise frames are ignored automatically.
+
+
+================================================================================
+SECTION 9: VEHICLE TRACKING — SimpleCentroidTracker
+================================================================================
+
+Problem: Without tracking, the same car would be counted 30 times per second
+Solution: Assign each detected object a persistent ID based on position
+
+Algorithm:
+  Frame N:   Detect objects, get bounding boxes → compute centroids
+  Frame N+1: For each new centroid, find the closest centroid from Frame N
+             If distance < 80 pixels → same object (same ID)
+             If no close match → new object (new ID)
+
+Result: Each unique vehicle gets exactly one ID even as it moves across the frame.
+        Total unique vehicles = all IDs ever assigned (not cumulative frame count).
+
+Traffic Density Points:
+  Every 9 sampled frames (~1.5 seconds), save a density snapshot:
+  {lat, lng, vehicle_count, classes, timestamp}
+  → This builds the heatmap over time on the Leaflet map
+
+
+================================================================================
+SECTION 10: GPS COORDINATES EXPLAINED
+================================================================================
+
+VIDEO DETECTION (Simulated GPS):
+  Real GPS hardware would normally be in the bus. For this prototype:
+  - A fixed base coordinate in Delhi is used (ITO area, Connaught Place)
+  - Each processed frame advances the simulated position by ~1.5m north + 2m east
+  - Small random jitter (±10m) is added to look realistic on the heatmap
+  - This simulates the bus driving along a 2km route
+
+MOBILE CAMERA DETECTION (Real GPS):
+  - Uses browser's navigator.geolocation.watchPosition() API
+  - Gets actual GPS coordinates from phone's GPS chip
+  - Accuracy: typically ±5-15 metres in good conditions outdoors
+  - Each pothole alert saved contains the REAL lat/lng from the phone
+
+HAVERSINE FORMULA (for deduplication):
+  Used to calculate real-world distance between two GPS points:
+  d = 2R × arcsin(√(sin²(Δφ/2) + cos(φ1)cos(φ2)sin²(Δλ/2)))
+  Where: R = 6,371,000 metres (Earth radius), φ = latitude, λ = longitude
+  Threshold: 100 metres — alerts within 100m are considered same pothole
+
+
+================================================================================
+SECTION 11: MJPEG VIDEO STREAMING
+================================================================================
+
+What is MJPEG?
+  Motion JPEG = sequence of individual JPEG images sent as a continuous HTTP stream.
+  Unlike H.264 video, each frame is independent — no inter-frame compression.
+
+How it works in this project:
+  1. Detection script draws bounding boxes on each frame using cv2.rectangle()
+  2. Script encodes frame as JPEG: cv2.imencode('.jpg', frame)
+  3. Script POSTs raw JPEG bytes to POST /api/frame
+  4. server.py stores it in global variable: LATEST_FRAME = await request.body()
+  5. Dashboard's <img src="/api/video_feed"> makes a GET request
+  6. server.py responds with Content-Type: multipart/x-mixed-replace; boundary=frame
+  7. An async generator yields:
+       --frame\r\n
+       Content-Type: image/jpeg\r\n\r\n
+       [JPEG bytes]
+       \r\n
+       (repeat every 50ms)
+  8. Browser continuously replaces the img src with each new JPEG
+
+This allows real-time video display without WebSockets or WebRTC — just HTTP.
+
+
+================================================================================
+SECTION 12: FRONTEND — HOW DATA FLOWS IN REACT
+================================================================================
+
+App.jsx is the ROOT component. It:
+  1. Maintains all application state using useState()
+  2. Polls APIs every 1500ms using setInterval() inside useEffect()
+  3. Passes data down to child components as props
+
+STATE VARIABLES in App.jsx:
+  - alerts[]          → All alert objects from /api/alerts
+  - traffic[]         → Traffic density points from /api/traffic
+  - stats{}           → Summary numbers from /api/stats
+  - selectedAlert     → Currently clicked alert (for detail view)
+  - showReport        → Boolean: show/hide incident report modal
+  - reportAlert       → Alert to generate report for
+
+COMPONENT HIERARCHY:
+  App.jsx
+  ├── Header.jsx              (title bar, no state)
+  ├── StatsBar.jsx            (receives: stats, potholeCount)
+  ├── [Video Feed img tag]    (static MJPEG src, no React state)
+  ├── [START AI / RESET buttons] (fetch POST, no state change needed)
+  ├── MapView.jsx             (receives: potholeAlerts, trafficData)
+  │   ├── Leaflet map
+  │   ├── Pothole markers (red circles with popups)
+  │   └── Traffic heatmap layer
+  ├── AlertTable.jsx          (receives: alerts, selectedAlert, onSelect)
+  ├── DetectionPreview.jsx    (receives: alert → shows image from /images/file.jpg)
+  └── IncidentReport.jsx      (receives: alert, onClose → modal overlay)
+
+PROXY SETUP (vite.config.js):
+  All requests from React to /api/* are forwarded to localhost:8000
+  This avoids CORS issues during development.
+  Example: fetch('/api/alerts') → Vite → localhost:8000/api/alerts
+
+
+================================================================================
+SECTION 13: DEDUPLICATION SYSTEM (ANTI-SPAM)
+================================================================================
+
+Problem: If phone camera stays pointing at same pothole, it would keep saving
+         duplicate alerts — polluting the map with false "new" detections.
+
+Solution (server.py /api/mobile_frame):
+  1. Extract GPS (lat, lng) from incoming request
+  2. Load all existing alerts from live-alerts.json
+  3. Filter only pothole-type alerts
+  4. For each existing pothole, calculate Haversine distance to current GPS
+  5. Count how many existing alerts are within 100 metres
+  6. If count >= 3:
+       → is_duplicate = True
+       → Skip saving
+       → Return {duplicate: true, nearby_count: N}
+  7. If count < 3:
+       → Save new alert with real GPS
+       → Return {duplicate: false, alerts_saved: 1}
+
+Phone UI Response:
+  duplicate=true  → Yellow toast notification for 3.5 seconds
+  duplicate=false → Green toast + red border flash + counter increment
+
+
+================================================================================
+SECTION 14: INCIDENT REPORT GENERATION
+================================================================================
+
+When user clicks "Generate Report" in the AlertTable:
+  1. React state: showReport=true, reportAlert=selectedAlert
+  2. IncidentReport modal renders over the page
+  3. Report contains:
+     - Incident ID (UUID)
+     - Timestamp (formatted)
+     - GPS Coordinates
+     - Confidence percentage
+     - Bus ID
+     - Evidence photograph (fetched from /images/filename.jpg)
+     - Severity classification (High >80%, Medium 60-80%, Low <60%)
+     - Recommended action text
+     - Disclaimer: "GPS coordinates are simulated for demo purposes"
+  4. User can print or screenshot the report for documentation
+
+
+================================================================================
+SECTION 15: RESET FLOW
+================================================================================
+
+When "RESET" button is clicked:
+  1. Dashboard: fetch POST /api/reset
+  2. server.py:
+     a. Iterates _running_processes list
+     b. Calls p.terminate() on each running subprocess (kills YOLO scripts)
+     c. Clears the processes list
+     d. Resets LATEST_FRAME to PLACEHOLDER_FRAME (black "SYSTEM IDLE" image)
+     e. Runs reset_demo.py which writes [] to both JSON files
+
+  3. Dashboard: stops showing old data within next 1.5s poll
+  4. Video feed: shows "SYSTEM IDLE" message
+  5. Ready to run START AI again from clean state
+
+
+================================================================================
+SECTION 16: DOCKER / DEPLOYMENT ARCHITECTURE
+================================================================================
+
+The Dockerfile builds a single container containing:
+  Layer 1: python:3.11-slim base image
+  Layer 2: Install system libs (libgl1, libglib2.0-0) + Node.js 20
+  Layer 3: Create non-root user (required by Hugging Face)
+  Layer 4: pip install -r requirements.txt (FastAPI, YOLO, OpenCV, etc.)
+  Layer 5: npm install + npm run build (compiles React to static files)
+  Layer 6: FastAPI server starts, detects dashboard/dist/ folder exists,
+           mounts it as static files at "/"
+           → Single server serves both API and React frontend!
+
+Port: 7860 (Hugging Face Spaces default)
+
+HOW SINGLE SERVER SERVES FRONTEND:
+  In server.py (added near bottom):
+    DASHBOARD_DIST = _PROJECT_ROOT / "dashboard" / "dist"
+    if DASHBOARD_DIST.exists():
+        app.mount("/", StaticFiles(directory=str(DASHBOARD_DIST), html=True))
+
+  This means:
+    GET /           → serves dashboard/dist/index.html (React app)
+    GET /api/alerts → handled by FastAPI route first (takes priority)
+    GET /assets/... → serves React build assets
+
+
+================================================================================
+SECTION 17: KEY NUMBERS & PERFORMANCE METRICS
+================================================================================
+
+  YOLO Processing Speed:
+    - Vehicle detection (YOLOv8n): ~10-15 frames/second on M-series Mac CPU
+    - Pothole detection (custom): similar speed
+    - Only every 5th frame is processed (SAMPLE_EVERY=5) → saves 80% CPU
+
+  Traffic Data Update Rate:
+    - Every 9 sampled frames → every ~1.5 seconds of video time
+    - Dashboard polls every 1.5 seconds → near real-time updates
+
+  Mobile Camera:
+    - Frame sent every 500ms (2 frames per second)
+    - YOLO runs on each received frame
+    - Dashboard MJPEG updates within 50ms of each new frame
+
+  File Sizes:
+    - yolov8n.pt: ~6.5 MB (vehicle model)
+    - pothole_best.pt: ~6 MB (pothole model)
+    - Evidence JPEG images: ~50-150 KB each
+
+  Deduplication Radius: 100 metres
+  Deduplication Threshold: 3 detections maximum per location
+
+  Dashboard Poll Interval: 1500ms (1.5 seconds)
+  MJPEG Max Frame Rate: 20 fps (asyncio.sleep(0.05))
+
+
+================================================================================
+SECTION 18: IMPORTANT TECHNICAL LIMITATIONS (For Q&A Preparation)
+================================================================================
+
+1. GPS IS SIMULATED for video-based detection:
+   Real deployment requires GPS hardware on the bus (any NMEA-compatible GPS module).
+   Mobile camera detection uses REAL GPS from the phone.
+
+2. JSON files are NOT a production database:
+   Concurrent writes from two Python processes could cause race conditions.
+   Real system should use PostgreSQL or Redis for data persistence.
+
+3. No authentication:
+   Any person who knows the API URL can POST fake alerts.
+   Real system needs API key auth or mTLS.
+
+4. Frame buffering:
+   Only the LATEST frame is stored. If scripts run faster than the dashboard reads,
+   intermediate frames are dropped. This is acceptable for demo purposes.
+
+5. Mobile model limitation:
+   pothole_best.pt was trained on road dashcam images.
+   It will NOT detect potholes on smooth floors or from the wrong angle/height.
+   Must be pointed at actual rough road surface from ~1-2 metres height.
+
+6. MJPEG is not encrypted:
+   Frames are sent as plain HTTP. In production, use HTTPS (which Cloudflare provides).
+
+7. Python subprocess management:
+   If the FastAPI server crashes, detection subprocesses become orphaned.
+   A systemd service or process manager would handle this in production.
+
+
+================================================================================
+SECTION 19: HOW TO RUN THE COMPLETE SYSTEM
+================================================================================
+
+STEP 1: Activate Python environment
+  cd urban-intel-prototype
+  source .venv/bin/activate
+
+STEP 2: Start FastAPI backend
+  uvicorn detection.server:app --host 0.0.0.0 --port 8000
+
+STEP 3: Start React dashboard (in new terminal tab)
+  cd dashboard
+  npm run dev
+  → Open http://localhost:5174 in browser
+
+STEP 4: (Optional) Expose to internet
+  npx cloudflared tunnel --url http://localhost:8000
+  → Copy the trycloudflare.com URL for mobile access
+
+STEP 5: Run detection
+  Click "▶ START AI" on dashboard
+  OR go to /capture on phone for live camera mode
+
+STEP 6: View results
+  Watch bounding boxes on video feed
+  See pothole pins appear on map
+  Check alert table for GPS + confidence + evidence images
+
+STEP 7: Reset for fresh demo
+  Click "↺ RESET" or run: python reset_demo.py
+
+
+================================================================================
+SECTION 20: GLOSSARY
+================================================================================
+
+  YOLO      : You Only Look Once — real-time object detection neural network
+  MJPEG     : Motion JPEG — video stream as sequence of JPEG images over HTTP
+  FastAPI   : Modern Python web framework with automatic async support
+  Uvicorn   : Lightning-fast ASGI server for Python async web apps
+  ASGI      : Asynchronous Server Gateway Interface
+  Vite      : Modern JavaScript build tool and dev server
+  Leaflet   : Open-source JavaScript library for interactive maps
+  Heatmap   : Visual representation of data density using color gradients
+  Haversine : Formula to calculate distance between GPS coordinates on a sphere
+  COCO      : Common Objects in Context — large image dataset used to train YOLO
+  Centroid  : Center point of a bounding box (x_center, y_center)
+  NMS       : Non-Maximum Suppression — removes duplicate YOLO detections
+  MJPEG     : Motion JPEG streaming format
+  FormData  : Browser API for sending multipart/form-data (used for image upload)
+  UUID      : Universally Unique Identifier — random ID for each alert
+  subprocess: Python module to spawn child processes (used to launch YOLO scripts)
+  Tunnel    : Secure connection that makes local server accessible on internet
+  CORS      : Cross-Origin Resource Sharing — browser security policy for APIs
+
+
+================================================================================
+  END OF DOCUMENT
+  Urban Road Intelligence Platform — SIH 2026
+  GitHub: https://github.com/Ayushsoni9125/urban-intel-prototype
+================================================================================
