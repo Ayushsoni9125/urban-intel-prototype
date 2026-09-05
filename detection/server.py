@@ -261,7 +261,7 @@ async def mobile_frame(request: Request):
     # Deduplication — skip if 3+ alerts already near this GPS
     # --------------------------------------------------
     DUPLICATE_THRESHOLD = 3    # max allowed detections per location
-    NEARBY_RADIUS_M    = 50    # metres — if within this radius, treat as same spot
+    NEARBY_RADIUS_M    = 100   # metres — wider radius to handle GPS jitter
 
     def _haversine_m(lat1, lng1, lat2, lng2) -> float:
         """Return distance in metres between two GPS points."""

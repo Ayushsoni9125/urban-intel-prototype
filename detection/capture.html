@@ -434,12 +434,10 @@
         frameCount++;
         document.getElementById('stat-frames').textContent = frameCount;
 
-        // FPS calculation
+        // FPS calculation (removed stat-fps display, just track internally)
         fpsFrames++;
         const now = Date.now();
         if (now - lastFpsTime >= 2000) {
-          const fps = (fpsFrames / ((now - lastFpsTime) / 1000)).toFixed(1);
-          document.getElementById('stat-fps').textContent = fps;
           fpsFrames = 0;
           lastFpsTime = now;
         }
