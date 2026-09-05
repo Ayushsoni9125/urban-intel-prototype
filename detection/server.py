@@ -129,6 +129,8 @@ def _get_placeholder_frame():
 
 PLACEHOLDER_FRAME = _get_placeholder_frame()
 LATEST_FRAME = PLACEHOLDER_FRAME
+LATEST_WATERLOGGING_FRAME = PLACEHOLDER_FRAME
+
 
 # --------------------------------------------------
 # Process tracking
@@ -154,6 +156,8 @@ async def reset_demo():
 
     # Reset video feed
     LATEST_FRAME = PLACEHOLDER_FRAME
+    LATEST_WATERLOGGING_FRAME = PLACEHOLDER_FRAME
+
 
     # Call reset_demo.py
     reset_script = _PROJECT_ROOT / "reset_demo.py"
@@ -183,14 +187,8 @@ async def start_demo():
         [sys.executable, "detection/vehicle_detection.py", "detection/videos/traffic_video.mp4"],
         cwd=str(_PROJECT_ROOT)
     )
-    # Start waterlogging detection (runs on traffic video from overhead angle)
-    p3 = subprocess.Popen(
-        [sys.executable, "detection/waterlogging_detection.py", "detection/videos/traffic_video.mp4"],
-        cwd=str(_PROJECT_ROOT)
-    )
-
-    _running_processes.extend([p1, p2, p3])
-    return {"status": "ok", "message": "Pothole, vehicle, and waterlogging detection started."}
+    _running_processes.extend([p1, p2])
+    return {"status": "ok", "message": "Pothole and vehicle detection started."}
 
 
 @app.post("/api/frame")
@@ -488,3 +486,142 @@ if __name__ == "__main__":
         for p in _running_processes:
             try: p.terminate()
             except: pass
+
+# --------------------------------------------------
+# Waterlogging Live Endpoints
+# --------------------------------------------------
+
+from detection.waterlogging_detection import detect_waterlogging_regions
+CAPTURE_WATERLOGGING_PAGE = _THIS_DIR / "capture_waterlogging.html"
+
+async def _waterlogging_frame_generator():
+    """Generator for Waterlogging MJPEG stream."""
+    global LATEST_WATERLOGGING_FRAME
+    while True:
+        if LATEST_WATERLOGGING_FRAME:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + LATEST_WATERLOGGING_FRAME + b'\r\n')
+        await asyncio.sleep(0.05)
+
+@app.get("/api/video_feed_waterlogging")
+async def video_feed_waterlogging():
+    """Stream live waterlogging frames to the dashboard."""
+    return StreamingResponse(_waterlogging_frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+@app.get("/capture_waterlogging", response_class=HTMLResponse)
+async def mobile_capture_waterlogging_page():
+    """Serve the mobile camera capture page for waterlogging."""
+    if CAPTURE_WATERLOGGING_PAGE.exists():
+        return HTMLResponse(content=CAPTURE_WATERLOGGING_PAGE.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>Capture page not found</h1>", status_code=404)
+
+@app.post("/api/mobile_frame_waterlogging")
+async def mobile_frame_waterlogging(request: Request):
+    """
+    Receive a JPEG frame + real GPS from the mobile capture page (waterlogging).
+    """
+    global LATEST_WATERLOGGING_FRAME
+
+    form = await request.form()
+    image_file = form.get("frame")
+    lat = float(form.get("lat", 0.0))
+    lng = float(form.get("lng", 0.0))
+
+    if image_file is None:
+        raise HTTPException(status_code=400, detail="No frame provided")
+
+    raw_bytes = await image_file.read()
+    np_arr = np.frombuffer(raw_bytes, np.uint8)
+    frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+    if frame is None:
+        raise HTTPException(status_code=400, detail="Could not decode image")
+
+    annotated_frame = frame.copy()
+    
+    # Run HSV detection
+    detections = detect_waterlogging_regions(frame)
+
+    for det in detections:
+        x1, y1, x2, y2 = det["x1"], det["y1"], det["x2"], det["y2"]
+        conf = det["confidence"]
+        cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 165, 255), 3)
+        label = f"WATERLOGGING {conf*100:.0f}%"
+        cv2.putText(annotated_frame, label, (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 165, 255), 2)
+
+    cv2.rectangle(annotated_frame, (0, 0), (annotated_frame.shape[1], 75), (0, 0, 0), -1)
+    status_text = f"WATERLOGGING CAM | GPS: {lat:.5f}, {lng:.5f}"
+    cv2.putText(annotated_frame, status_text, (10, 25),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+    detect_text = f"Regions this frame: {len(detections)} | Model: HSV+Contour"
+    cv2.putText(annotated_frame, detect_text, (10, 55),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.55, (200, 200, 200), 1)
+
+    _, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    LATEST_WATERLOGGING_FRAME = buffer.tobytes()
+
+    DUPLICATE_THRESHOLD = 3
+    NEARBY_RADIUS_M = 100
+
+    def _haversine_m(lat1, lng1, lat2, lng2) -> float:
+        import math
+        R = 6_371_000
+        phi1, phi2 = math.radians(lat1), math.radians(lat2)
+        dphi = math.radians(lat2 - lat1)
+        dlam = math.radians(lng2 - lng1)
+        a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlam/2)**2
+        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    saved_alerts = []
+    is_duplicate = False
+    nearby_count = 0
+
+    if detections and lat != 0.0:
+        try:
+            existing = json.loads(ALERTS_FILE.read_text(encoding="utf-8").strip() or "[]")
+        except Exception:
+            existing = []
+
+        nearby_alerts = [
+            a for a in existing
+            if a.get("event_type") == "waterlogging"
+            and a.get("gps")
+            and _haversine_m(lat, lng, a["gps"]["lat"], a["gps"]["lng"]) <= NEARBY_RADIUS_M
+        ]
+        nearby_count = len(nearby_alerts)
+
+        if nearby_count >= DUPLICATE_THRESHOLD:
+            is_duplicate = True
+        else:
+            best = max(detections, key=lambda d: d["confidence"])
+            alert_id = str(uuid.uuid4())
+            timestamp = datetime.now(timezone.utc).isoformat()
+
+            img_filename = f"waterlog_mobile_{alert_id[:8]}.jpg"
+            img_path = IMAGES_DIR / img_filename
+            cv2.imwrite(str(img_path), annotated_frame)
+
+            alert = {
+                "id": alert_id,
+                "event_type": "waterlogging",
+                "confidence": round(best["confidence"], 3),
+                "timestamp": timestamp,
+                "gps": {"lat": lat, "lng": lng},
+                "bus_id": "MOBILE-CAM-WATERLOG",
+                "image_path": img_filename,
+                "source": "mobile_camera",
+                "region_area_px": best["area"],
+            }
+            existing.insert(0, alert)
+            ALERTS_FILE.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+            saved_alerts.append(alert_id)
+
+    return {
+        "status": "ok",
+        "detections": len(detections),
+        "alerts_saved": len(saved_alerts),
+        "duplicate": is_duplicate,
+        "nearby_count": nearby_count,
+        "gps": {"lat": lat, "lng": lng},
+    }

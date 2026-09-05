@@ -119,14 +119,26 @@ export default function App() {
                  >↺ RESET</button>
                </div>
              </div>
-             <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-               <img 
-                  src={`${API_BASE}/api/video_feed`} 
-                  alt="Live Dashcam Feed"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-               />
-               <div style={{ position: 'absolute', bottom: 10, left: 10, color: 'white', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', fontSize: 10, borderRadius: 3 }}>
-                 AI Processed Feed
+             <div style={{ flex: 1, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
+               <div style={{ flex: 1, position: 'relative', borderRight: '1px solid #d1d5db' }}>
+                 <img 
+                    src={`${API_BASE}/api/video_feed`} 
+                    alt="Pothole & Traffic Feed"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                 />
+                 <div style={{ position: 'absolute', bottom: 10, left: 10, color: 'white', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', fontSize: 10, fontWeight: 'bold', borderRadius: 3 }}>
+                   Pothole & Traffic Cam
+                 </div>
+               </div>
+               <div style={{ flex: 1, position: 'relative' }}>
+                 <img 
+                    src={`${API_BASE}/api/video_feed_waterlogging`} 
+                    alt="Waterlogging Mobile Feed"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                 />
+                 <div style={{ position: 'absolute', bottom: 10, left: 10, color: 'white', background: 'rgba(3,105,161,0.8)', padding: '4px 8px', fontSize: 10, fontWeight: 'bold', borderRadius: 3 }}>
+                   Waterlogging Mobile Cam
+                 </div>
                </div>
              </div>
           </div>
