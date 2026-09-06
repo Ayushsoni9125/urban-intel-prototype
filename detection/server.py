@@ -117,6 +117,15 @@ def _load_json(filepath: Path) -> list:
         print(f"Warning: Could not read {filepath}: {e}")
         return []
 
+def haversine_m(lat1, lng1, lat2, lng2) -> float:
+    """Return distance in metres between two GPS points."""
+    import math
+    R = 6_371_000  # Earth radius in metres
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlam = math.radians(lng2 - lng1)
+    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlam/2)**2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 # --------------------------------------------------
 # Video Streaming State
@@ -268,16 +277,6 @@ async def mobile_frame(request: Request):
     DUPLICATE_THRESHOLD = 3    # max allowed detections per location
     NEARBY_RADIUS_M    = 100   # metres — wider radius to handle GPS jitter
 
-    def _haversine_m(lat1, lng1, lat2, lng2) -> float:
-        """Return distance in metres between two GPS points."""
-        import math
-        R = 6_371_000  # Earth radius in metres
-        phi1, phi2 = math.radians(lat1), math.radians(lat2)
-        dphi = math.radians(lat2 - lat1)
-        dlam = math.radians(lng2 - lng1)
-        a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlam/2)**2
-        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
     # Save alert and evidence image for each confirmed detection
     saved_alerts = []
     is_duplicate  = False
@@ -295,7 +294,7 @@ async def mobile_frame(request: Request):
             a for a in existing
             if a.get("event_type") == "pothole"
             and a.get("gps")
-            and _haversine_m(lat, lng, a["gps"]["lat"], a["gps"]["lng"]) <= NEARBY_RADIUS_M
+            and haversine_m(lat, lng, a["gps"]["lat"], a["gps"]["lng"]) <= NEARBY_RADIUS_M
         ]
         nearby_count = len(nearby_alerts)
 
@@ -394,6 +393,7 @@ async def get_alerts():
     """
     Return all alerts from shared/live-alerts.json.
     Sorted by timestamp descending (newest first).
+    Deduplicates potholes within 100m so the frontend only shows a single report.
     """
     alerts = _load_json(ALERTS_FILE)
 
@@ -403,7 +403,24 @@ async def get_alerts():
     except Exception:
         pass  # Don't fail if sorting breaks
 
-    return JSONResponse(content=alerts)
+    # Deduplicate potholes within 100m for frontend
+    filtered_alerts = []
+    seen_locations = []
+    
+    for a in alerts:
+        if a.get("event_type") == "pothole" and a.get("gps"):
+            lat, lng = a["gps"]["lat"], a["gps"]["lng"]
+            is_dup = False
+            for loc in seen_locations:
+                if haversine_m(lat, lng, loc[0], loc[1]) <= 100:
+                    is_dup = True
+                    break
+            if is_dup:
+                continue
+            seen_locations.append((lat, lng))
+        filtered_alerts.append(a)
+
+    return JSONResponse(content=filtered_alerts)
 
 
 @app.get("/api/traffic")

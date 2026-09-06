@@ -704,3 +704,20 @@ SECTION 20: GLOSSARY
   Urban Road Intelligence Platform — SIH 2026
   GitHub: https://github.com/Ayushsoni9125/urban-intel-prototype
 ================================================================================
+
+
+================================================================================
+SECTION 21: RECENT CHANGELOG & ARCHITECTURE UPDATES
+================================================================================
+
+1. WATERLOGGING SUBSYSTEM REMOVED:
+   - Previously, the system included an experimental waterlogging detection model.
+   - This feature was completely removed to reduce false positives (HSV mask conflicts with dry asphalt).
+   - Deleted files: detection/waterlogging_detection.py, detection/capture_waterlogging.html.
+   - server.py endpoints (/api/video_feed_waterlogging, etc.) and UI components were permanently removed.
+   - The system is now strictly focused on Pothole and Vehicle/Traffic detection.
+
+2. UI ARCHITECTURE STABILITY:
+   - The frontend was briefly refactored into an 'Urban Operations Console' but was reverted back to the 'Classic Government Dashboard' per stakeholder request.
+   - React components (Header.jsx, StatsBar.jsx, MapView.jsx, DetectionPreview.jsx) remain stable and unchanged in their original functional state.
+
