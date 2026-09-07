@@ -101,7 +101,7 @@ export default function App() {
           
           {/* Live Video Feed */}
           <div className="w-full lg:w-1/2 h-[300px] lg:h-full border-b-4 lg:border-b-0 lg:border-r-4 flex flex-col" style={{ borderColor: 'var(--color-border)', backgroundColor: '#111' }}>
-             <div style={{ padding: '8px 16px', background: '#fff', borderBottom: '1px solid #d1d5db', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+             <div style={{ padding: '8px 16px', background: '#fff', borderBottom: '1px solid #d1d5db', flexShrink: 0, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                  <span style={{ fontSize: 11, fontWeight: 700, color: '#718096', letterSpacing: '0.05em' }}>LIVE DASHCAM FEED: BUS-017</span>
                  <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }} className="animate-pulse">● LIVE</span>
