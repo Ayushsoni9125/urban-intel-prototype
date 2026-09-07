@@ -405,70 +405,93 @@
   async function captureAndSend() {
     if (!stream || !cam.videoWidth) return;
 
-    // Draw current video frame to canvas
-    canvas.width = cam.videoWidth;
-    canvas.height = cam.videoHeight;
-    ctx.drawImage(cam, 0, 0);
+    return new Promise((resolve) => {
+      // Draw current video frame to canvas
+      canvas.width = cam.videoWidth;
+      canvas.height = cam.videoHeight;
+      ctx.drawImage(cam, 0, 0);
 
-    // Convert to JPEG blob
-    canvas.toBlob(async (blob) => {
-      if (!blob) return;
-
-      const form = new FormData();
-      form.append('frame', blob, 'frame.jpg');
-      form.append('lat', currentGPS.lat.toString());
-      form.append('lng', currentGPS.lng.toString());
-
-      try {
-        const res = await fetch(`${BACKEND}/api/mobile_frame`, {
-          method: 'POST',
-          body: form,
-        });
-
-        if (!res.ok) {
-          log(`Server error: ${res.status}`, 'pothole');
+      // Convert to JPEG blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          resolve();
           return;
         }
 
-        const data = await res.json();
-        frameCount++;
-        document.getElementById('stat-frames').textContent = frameCount;
+        const form = new FormData();
+        form.append('frame', blob, 'frame.jpg');
+        form.append('lat', currentGPS.lat.toString());
+        form.append('lng', currentGPS.lng.toString());
 
-        // FPS calculation (removed stat-fps display, just track internally)
-        fpsFrames++;
-        const now = Date.now();
-        if (now - lastFpsTime >= 2000) {
-          fpsFrames = 0;
-          lastFpsTime = now;
-        }
+        try {
+          const res = await fetch(`${BACKEND}/api/mobile_frame`, {
+            method: 'POST',
+            body: form,
+          });
 
-        if (data.detections > 0) {
-          if (data.duplicate) {
-            // Duplicate — show yellow toast, don't increment pothole count
-            duplicateCount++;
-            document.getElementById('stat-duplicates').textContent = duplicateCount;
-            showToast(`⚠ Pothole already reported here (${data.nearby_count} detections at this spot)`, 'duplicate');
-            log(`⚠ DUPLICATE — already reported ${data.nearby_count}× at (${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)})`, 'duplicate');
-          } else {
-            potholeCount += data.alerts_saved;
-            document.getElementById('stat-potholes').textContent = potholeCount;
+          if (!res.ok) {
+            log(`Server error: ${res.status}`, 'pothole');
+            resolve();
+            return;
+          }
 
-            // Flash red border
-            flash.classList.add('show');
-            setTimeout(() => flash.classList.remove('show'), 300);
+          const data = await res.json();
+          frameCount++;
+          document.getElementById('stat-frames').textContent = frameCount;
 
-            if (data.alerts_saved > 0) {
-              showToast(`🚨 New pothole saved to dashboard!`, 'saved');
-              log(`🚨 POTHOLE SAVED — GPS: (${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)})`, 'pothole');
+          // FPS calculation (removed stat-fps display, just track internally)
+          fpsFrames++;
+          const now = Date.now();
+          if (now - lastFpsTime >= 2000) {
+            fpsFrames = 0;
+            lastFpsTime = now;
+          }
+
+          if (data.detections > 0) {
+            if (data.duplicate) {
+              // Duplicate — show yellow toast, don't increment pothole count
+              duplicateCount++;
+              document.getElementById('stat-duplicates').textContent = duplicateCount;
+              showToast(`⚠ Pothole already reported here (${data.nearby_count} detections at this spot)`, 'duplicate');
+              log(`⚠ DUPLICATE — already reported ${data.nearby_count}× at (${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)})`, 'duplicate');
             } else {
-              log(`⚠ Pothole detected (not saved — GPS invalid)`);
+              potholeCount += data.alerts_saved;
+              document.getElementById('stat-potholes').textContent = potholeCount;
+
+              // Flash red border
+              flash.classList.add('show');
+              setTimeout(() => flash.classList.remove('show'), 300);
+
+              if (data.alerts_saved > 0) {
+                showToast(`🚨 New pothole saved to dashboard!`, 'saved');
+                log(`🚨 POTHOLE SAVED — GPS: (${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)})`, 'pothole');
+              } else {
+                log(`⚠ Pothole detected (not saved — GPS invalid)`);
+              }
             }
           }
+        } catch (err) {
+          log(`Network error: ${err.message}`, 'pothole');
+        } finally {
+          resolve();
         }
-      } catch (err) {
-        log(`Network error: ${err.message}`, 'pothole');
-      }
-    }, 'image/jpeg', 0.8);
+      }, 'image/jpeg', 0.7); // slightly lower quality for faster upload
+    });
+  }
+
+  let isCapturing = false;
+
+  async function captureLoop() {
+    if (!isCapturing) return;
+    const startTime = Date.now();
+    
+    await captureAndSend();
+    
+    const elapsed = Date.now() - startTime;
+    const delay = Math.max(0, 500 - elapsed);
+    if (isCapturing) {
+      captureInterval = setTimeout(captureLoop, delay);
+    }
   }
 
   // ─── Start / Stop ─────────────────────────────────────────
@@ -480,8 +503,8 @@
       await startCamera();
       startGPS();
 
-      // Send a frame every 500ms for a smooth live feed
-      captureInterval = setInterval(captureAndSend, 500);
+      isCapturing = true;
+      captureLoop();
       setStatus('SCANNING', 'active');
       log('Detection started');
 
@@ -493,7 +516,8 @@
   });
 
   btnStop.addEventListener('click', () => {
-    clearInterval(captureInterval);
+    isCapturing = false;
+    clearTimeout(captureInterval);
     captureInterval = null;
     stopCamera();
     stopGPS();

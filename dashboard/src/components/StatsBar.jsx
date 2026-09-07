@@ -60,25 +60,9 @@ export default function StatsBar({ stats, alertCount, potholeCount }) {
       />
 
       <StatCard
-        label="Traffic Events"
-        value={trafficEvents}
-        subtitle="Density data points"
-      />
-      <StatCard
-        label="Vehicles Detected"
-        value={totalVehicles.toLocaleString('en-IN')}
-        subtitle="Cars, trucks, buses, bikes"
-      />
-      <StatCard
         label="Active Buses"
         value={activeBuses}
         subtitle="Fleet reporting"
-      />
-      <StatCard
-        label="Congestion Alerts"
-        value={congestion}
-        color={congestion > 0 ? 'var(--color-alert-orange)' : undefined}
-        subtitle="High-density events"
       />
       <div style={{
         padding: '14px 16px',
