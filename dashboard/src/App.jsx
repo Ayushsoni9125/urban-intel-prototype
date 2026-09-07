@@ -100,7 +100,7 @@ export default function App() {
         <section className="flex flex-col lg:flex-row border-b lg:h-[480px]" style={{ borderColor: 'var(--color-border)' }}>
           
           {/* Live Video Feed */}
-          <div className="w-full lg:w-1/2 h-[300px] lg:h-full border-b lg:border-b-0 lg:border-r flex flex-col" style={{ borderColor: 'var(--color-border)', backgroundColor: '#000' }}>
+          <div className="w-full lg:w-1/2 h-[300px] lg:h-full border-b-4 lg:border-b-0 lg:border-r-4 flex flex-col" style={{ borderColor: 'var(--color-border)', backgroundColor: '#111' }}>
              <div style={{ padding: '8px 16px', background: '#fff', borderBottom: '1px solid #d1d5db', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                  <span style={{ fontSize: 11, fontWeight: 700, color: '#718096', letterSpacing: '0.05em' }}>LIVE DASHCAM FEED: BUS-017</span>
@@ -112,7 +112,10 @@ export default function App() {
                     className="px-3 py-1 text-[10px] font-bold tracking-wide text-white bg-emerald-500 hover:bg-emerald-600 rounded cursor-pointer transition-colors shadow-sm"
                  >▶ START AI</button>
                  <button 
-                    onClick={() => fetch(`${API_BASE}/api/reset`, { method: 'POST' })}
+                    onClick={() => {
+                      fetch(`${API_BASE}/api/reset`, { method: 'POST' });
+                      setSelectedAlert(null);
+                    }}
                     className="px-3 py-1 text-[10px] font-bold tracking-wide text-white bg-red-500 hover:bg-red-600 rounded cursor-pointer transition-colors shadow-sm"
                  >↺ RESET</button>
                </div>
@@ -122,7 +125,7 @@ export default function App() {
                  <img 
                     src={`${API_BASE}/api/video_feed`} 
                     alt="Pothole Cam Feed"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                  />
                  <div style={{ position: 'absolute', bottom: 10, left: 10, color: 'white', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', fontSize: 10, fontWeight: 'bold', borderRadius: 3 }}>
                    Pothole Cam
