@@ -125,7 +125,7 @@ export default function App() {
                  <img 
                     src={`${API_BASE}/api/video_feed`} 
                     alt="Pothole Cam Feed"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                  />
                  <div style={{ position: 'absolute', bottom: 10, left: 10, color: 'white', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', fontSize: 10, fontWeight: 'bold', borderRadius: 3 }}>
                    Pothole Cam
