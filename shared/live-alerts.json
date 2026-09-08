@@ -1,1 +1,41 @@
-[]
+[
+  {
+    "id": "468b9d05-6cc9-4fc4-8884-723fcc2454e4",
+    "event_type": "pothole",
+    "confidence": 0.534,
+    "timestamp": "2026-09-08T05:23:01.479177+00:00",
+    "gps": {
+      "lat": 28.7517943,
+      "lng": 77.4995625
+    },
+    "bus_id": "MOBILE-CAM",
+    "image_path": "mobile_468b9d05.jpg",
+    "source": "mobile_camera"
+  },
+  {
+    "id": "0d7ece03-de7d-48f1-8f9a-3ea1858ed49d",
+    "event_type": "pothole",
+    "confidence": 0.79,
+    "timestamp": "2026-09-08T05:22:55.834092+00:00",
+    "gps": {
+      "lat": 28.7517031,
+      "lng": 77.4996667
+    },
+    "bus_id": "MOBILE-CAM",
+    "image_path": "mobile_0d7ece03.jpg",
+    "source": "mobile_camera"
+  },
+  {
+    "id": "840a883f-f3d1-42bc-86cd-06535b46b653",
+    "event_type": "pothole",
+    "confidence": 0.264,
+    "timestamp": "2026-09-08T05:22:52.905505+00:00",
+    "gps": {
+      "lat": 28.7517031,
+      "lng": 77.4996667
+    },
+    "bus_id": "MOBILE-CAM",
+    "image_path": "mobile_840a883f.jpg",
+    "source": "mobile_camera"
+  }
+]

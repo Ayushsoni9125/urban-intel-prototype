@@ -13,11 +13,10 @@ SECTION 1: PROJECT OVERVIEW
 
 This project is a real-time urban road intelligence platform that:
   1. Detects potholes from a dashcam video feed using AI (YOLO)
-  2. Detects vehicles, traffic density, and congestion from a traffic camera feed
-  3. Displays all detections live on a government-style control room dashboard
-  4. Plots real GPS pins on a map for every detected pothole
-  5. Allows a mobile phone to act as a live dashcam for real-world testing
-  6. Generates formal Incident Reports for every pothole alert
+  2. Displays pothole detections live on a government-style control room dashboard
+  3. Plots real GPS pins on a map for every detected pothole
+  4. Allows a mobile phone to act as a live dashcam for real-world testing
+  5. Generates formal Incident Reports for every pothole alert
 
 The system simulates a complete Smart City infrastructure — the kind used by
 municipal corporations (NDMC, BBMP, BMC) for road condition monitoring.
@@ -720,4 +719,9 @@ SECTION 21: RECENT CHANGELOG & ARCHITECTURE UPDATES
 2. UI ARCHITECTURE STABILITY:
    - The frontend was briefly refactored into an 'Urban Operations Console' but was reverted back to the 'Classic Government Dashboard' per stakeholder request.
    - React components (Header.jsx, StatsBar.jsx, MapView.jsx, DetectionPreview.jsx) remain stable and unchanged in their original functional state.
+
+3. STREAMLINED FOR POTHOLE DETECTION:
+   - Dummy vehicle/traffic detection (vehicle_detection.py) was removed from the backend orchestration.
+   - Frontend traffic and congestion stats were removed to focus the dashboard exclusively on pothole reporting.
+   - Mobile camera upload latency was significantly optimized by replacing setInterval with a wait-based setTimeout polling loop in capture.html to prevent request queueing lag.
 

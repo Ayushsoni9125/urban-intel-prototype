@@ -230,7 +230,7 @@ async def mobile_frame(request: Request):
     # Run YOLO if model is loaded
     if _mobile_model is not None:
         try:
-            results = _mobile_model(frame, verbose=False, conf=0.20)  # lower threshold = more sensitive
+            results = _mobile_model(frame, verbose=False, conf=0.40)
             for result in results:
                 if result.boxes is None:
                     continue
