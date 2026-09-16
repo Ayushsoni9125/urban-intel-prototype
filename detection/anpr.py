@@ -20,7 +20,7 @@ OCR_INTERVAL = 5                      # Dashcam mode only
 
 print("[ANPR] Initializing EasyOCR (English)...")
 try:
-    reader = easyocr.Reader(['en'], gpu=False, detect_network="craft", recognizer_network="standard")
+    reader = easyocr.Reader(['en'], gpu=False)
     print("[ANPR] EasyOCR ready.")
 except Exception as e:
     print(f"[ANPR] EasyOCR init failed: {e}")
@@ -107,30 +107,64 @@ def _preprocess_variants(img):
 # --------------------------------------------------
 
 def validate_indian_plate(raw_text):
-    """Clean and loosely validate Indian number plate text."""
+    """Clean and strictly validate license plate text to ignore screen/webpage UI noise."""
     clean = re.sub(r'[^A-Z0-9]', '', raw_text.upper())
-    if not (5 <= len(clean) <= 13):
+    if not (5 <= len(clean) <= 12):
         return None
-    if not re.search(r'[A-Z]', clean) or not re.search(r'[0-9]', clean):
+        
+    # Must contain both letters AND digits (at least 2 of each)
+    letters = re.findall(r'[A-Z]', clean)
+    digits = re.findall(r'[0-9]', clean)
+    if len(letters) < 2 or len(digits) < 2:
         return None
-    # Reject garbage like "AAAAAAA" or "0000000"
+
+    # Reject repetitive characters like "AAAAA" or "121212"
     if len(set(clean)) < 3:
         return None
-    # Reject common false positives
-    blacklist = {"POTHOLE", "POTHOL", "DETECT", "LIVE", "MODEL", "MOBILE", "CAMERA"}
-    if clean in blacklist or any(bl in clean for bl in blacklist):
-        return None
-    return clean
+
+    # Reject web UI / website background text words
+    blacklist_words = [
+        "STOCK", "ROYALTY", "FREEPIK", "DOWNLOAD", "ATTRIBUTION", "RESOURCE",
+        "YOUTUBE", "GOOGLE", "CHROME", "POTHOLE", "DETECT", "LIVE", "MODEL",
+        "MOBILE", "CAMERA", "SCREEN", "DESKTOP", "CANCEL", "SUBMIT", "BUTTON",
+        "HEADER", "FOOTER", "CLICK", "IMAGE", "PHOTO", "VECTOR", "LICENSE",
+        "SHUTTER", "ADOBE", "UNSPLASH", "PEXELS", "GITHUB", "FLATICON",
+        "SUBSCRIBE", "SHARE", "LIKE", "COMMENT", "ELEMENT", "SEARCH", "REQUIRED",
+        "INFO", "SYSTEM", "REPORT", "ALERT", "DASHBOARD", "INTEL", "URBAN", "ROAD"
+    ]
+    for bw in blacklist_words:
+        if bw in clean:
+            return None
+
+    # Format checks:
+    # 1. Standard Indian state plate: e.g. DL3CCE1234, MH12AB1234, KA05M9999
+    # 2. BH Series: e.g. 22BH1234AB
+    # 3. Standard EU/Intl format: e.g. 0671GGP or 6711GGP or GGP0671
+    states = r'(DL|MH|KA|HR|UP|TN|TS|GJ|RJ|KL|WB|BR|MP|AP|OD|PB|CH|GA|JK|UK|PY|AN|DD|DN|LD|NL|MN|TR|ML|MZ|SK|HP|JH|CG)'
+    if re.match(r'^' + states + r'\d{1,2}[A-Z]{1,3}\d{1,4}$', clean):
+        return clean
+        
+    if re.match(r'^\d{2}BH\d{4}[A-Z]{1,2}$', clean):
+        return clean
+        
+    if re.match(r'^\d{3,4}[A-Z]{2,4}$', clean) or re.match(r'^[A-Z]{2,4}\d{3,4}$', clean) or re.match(r'^[A-Z]{1,3}\d{3,4}[A-Z]{1,3}$', clean):
+        return clean
+
+    # Generic fallback: if 3+ digits and 2+ letters, length 5-10
+    if 5 <= len(clean) <= 10 and len(digits) >= 2 and len(letters) >= 2:
+        return clean
+
+    return None
 
 
 # --------------------------------------------------
 # 4. OCR runner
 # --------------------------------------------------
 
-def run_ocr(image):
-    """Run EasyOCR and return (text, confidence)."""
+def run_ocr(image, combine=True):
+    """Run EasyOCR and return (text, confidence) if combine=True, else raw results list."""
     if reader is None or image is None or image.size == 0:
-        return None, 0.0
+        return (None, 0.0) if combine else []
     try:
         results = reader.readtext(
             image,
@@ -142,10 +176,13 @@ def run_ocr(image):
             low_text=0.3,
         )
     except Exception as e:
-        return None, 0.0
+        return (None, 0.0) if combine else []
 
     if not results:
-        return None, 0.0
+        return (None, 0.0) if combine else []
+
+    if not combine:
+        return results
 
     # Sort left-to-right and combine fragments
     results_sorted = sorted(results, key=lambda r: r[0][0][0])
@@ -169,18 +206,22 @@ def scan_full_frame_for_plates(frame):
 
     found = []
     for processed in _preprocess_variants(frame):
-        raw, conf = run_ocr(processed)
-        if not raw:
-            continue
-        # Split by runs of spaces and try each chunk
-        for chunk in re.split(r'\s+', raw):
-            clean = validate_indian_plate(chunk)
-            if clean and conf >= OCR_CONFIDENCE_THRESHOLD:
+        ocr_results = run_ocr(processed, combine=False)
+        for _, raw, conf in ocr_results:
+            if not raw or conf < OCR_CONFIDENCE_THRESHOLD:
+                continue
+            
+            # Try the whole block
+            clean = validate_indian_plate(raw)
+            if clean:
                 found.append((clean, conf))
-        # Also try the full combined string
-        clean = validate_indian_plate(raw)
-        if clean and conf >= OCR_CONFIDENCE_THRESHOLD:
-            found.append((clean, conf))
+                
+            # Try splitting it in case multiple words got grouped
+            for chunk in re.split(r'\s+', raw):
+                if len(chunk) > 4:
+                    clean_chunk = validate_indian_plate(chunk)
+                    if clean_chunk:
+                        found.append((clean_chunk, conf))
 
     # Deduplicate by plate text, keep highest conf
     best = {}

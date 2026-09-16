@@ -1,41 +1,41 @@
 [
   {
-    "id": "7a1222f4-26b8-4eb2-a835-365253394e67",
+    "id": "9edd1ead-750a-476d-9e77-c41202cc2eb0",
     "event_type": "pothole",
-    "confidence": 0.583,
-    "timestamp": "2026-09-16T19:43:02.599790+00:00",
+    "confidence": 0.677,
+    "timestamp": "2026-09-16T20:47:38.235187+00:00",
     "gps": {
-      "lat": 28.7517552,
-      "lng": 77.4997204
+      "lat": 28.7517315,
+      "lng": 77.4997533
     },
     "bus_id": "MOBILE-CAM",
-    "image_path": "mobile_7a1222f4.jpg",
+    "image_path": "mobile_9edd1ead.jpg",
     "source": "mobile_camera"
   },
   {
-    "id": "2dbfc729-a1e4-4ed0-9d01-457055d05fc5",
+    "id": "54ff786d-3cc9-4b84-b7ac-2e5fc1c0e897",
     "event_type": "pothole",
-    "confidence": 0.579,
-    "timestamp": "2026-09-16T19:43:00.876266+00:00",
+    "confidence": 0.717,
+    "timestamp": "2026-09-16T20:47:37.483720+00:00",
     "gps": {
-      "lat": 28.751679,
-      "lng": 77.4996547
+      "lat": 28.7517315,
+      "lng": 77.4997533
     },
     "bus_id": "MOBILE-CAM",
-    "image_path": "mobile_2dbfc729.jpg",
+    "image_path": "mobile_54ff786d.jpg",
     "source": "mobile_camera"
   },
   {
-    "id": "a43f06e2-ea93-44b7-91d8-451e2092a842",
+    "id": "9214a2fb-ef08-409f-83fb-00ab246181ea",
     "event_type": "pothole",
-    "confidence": 0.419,
-    "timestamp": "2026-09-16T19:42:56.127641+00:00",
+    "confidence": 0.724,
+    "timestamp": "2026-09-16T20:47:36.659429+00:00",
     "gps": {
-      "lat": 28.7515995,
-      "lng": 77.4995658
+      "lat": 28.7517333,
+      "lng": 77.4997493
     },
     "bus_id": "MOBILE-CAM",
-    "image_path": "mobile_a43f06e2.jpg",
+    "image_path": "mobile_9214a2fb.jpg",
     "source": "mobile_camera"
   }
 ]

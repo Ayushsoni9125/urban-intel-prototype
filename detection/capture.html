@@ -350,6 +350,53 @@
   }
   setInterval(updateHudTime, 1000);
 
+  // ─── Poll backend alerts to catch async ANPR completions ─────────
+  let knownAlertIds = new Set();
+  let isFirstSync = true;
+
+  async function syncAlertsCount() {
+    try {
+      const res = await fetch(`${BACKEND}/api/alerts`);
+      if (!res.ok) return;
+      const alerts = await res.json();
+
+      for (const alert of alerts) {
+        if (knownAlertIds.has(alert.id)) continue;
+        knownAlertIds.add(alert.id);
+
+        if (isFirstSync) continue; // Initial seed on load
+
+        if (alert.event_type === 'vehicle_event' && alert.vehicle?.plate_number) {
+          plateCount++;
+          document.getElementById('stat-plates').textContent = plateCount;
+
+          flash.style.borderColor = "#a78bfa";
+          flash.classList.add('show');
+          setTimeout(() => { flash.classList.remove('show'); flash.style.borderColor = "#f85149"; }, 300);
+
+          showToast(`📸 Plate captured: ${alert.vehicle.plate_number}!`, 'saved');
+          log(`📸 PLATE SAVED: ${alert.vehicle.plate_number} (Conf: ${(alert.confidence*100).toFixed(0)}%)`, 'anpr');
+        } else if (alert.event_type === 'pothole' && alert.bus_id === 'MOBILE-CAM') {
+          potholeCount++;
+          document.getElementById('stat-potholes').textContent = potholeCount;
+
+          flash.classList.add('show');
+          setTimeout(() => flash.classList.remove('show'), 300);
+
+          showToast(`🚨 New pothole saved to dashboard!`, 'saved');
+          log(`🚨 POTHOLE SAVED — GPS: (${alert.gps?.lat?.toFixed(5) || 0}, ${alert.gps?.lng?.toFixed(5) || 0})`, 'pothole');
+        }
+      }
+
+      isFirstSync = false;
+    } catch (e) {
+      // Ignore background sync error
+    }
+  }
+
+  setInterval(syncAlertsCount, 2000);
+  syncAlertsCount();
+
   // ─── GPS ─────────────────────────────────────────────────
   function startGPS() {
     if (!navigator.geolocation) {
