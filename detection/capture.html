@@ -110,7 +110,7 @@
 
     .stats-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 12px;
       margin-bottom: 16px;
     }
@@ -201,6 +201,7 @@
 
     .log-entry { line-height: 1.6; }
     .log-entry.pothole { color: #f85149; font-weight: 600; }
+    .log-entry.anpr { color: #a78bfa; font-weight: 600; }
     .log-entry.duplicate { color: #e3b341; font-weight: 600; }
 
     /* Toast popup */
@@ -271,6 +272,10 @@
       <div class="stat-label">Potholes Found</div>
     </div>
     <div class="stat-card">
+      <div class="stat-value" id="stat-plates" style="color:#a78bfa">0</div>
+      <div class="stat-label">Plates Found</div>
+    </div>
+    <div class="stat-card">
       <div class="stat-value" id="stat-duplicates" style="color:#e3b341">0</div>
       <div class="stat-label">Already Reported</div>
     </div>
@@ -293,6 +298,7 @@
   let gpsWatchId = null;
   let frameCount = 0;
   let potholeCount = 0;
+  let plateCount = 0;
   let duplicateCount = 0;
   let lastFpsTime = Date.now();
   let fpsFrames = 0;
@@ -406,10 +412,12 @@
     if (!stream || !cam.videoWidth) return;
 
     return new Promise((resolve) => {
-      // Draw current video frame to canvas
-      canvas.width = cam.videoWidth;
-      canvas.height = cam.videoHeight;
-      ctx.drawImage(cam, 0, 0);
+      // Draw at reduced resolution (480x360) for faster upload and processing
+      const CAPTURE_W = 480;
+      const CAPTURE_H = 360;
+      canvas.width = CAPTURE_W;
+      canvas.height = CAPTURE_H;
+      ctx.drawImage(cam, 0, 0, CAPTURE_W, CAPTURE_H);
 
       // Convert to JPEG blob
       canvas.toBlob(async (blob) => {
@@ -447,7 +455,7 @@
             lastFpsTime = now;
           }
 
-          if (data.detections > 0) {
+          if (data.detections > 0 || data.anpr_saved > 0) {
             if (data.duplicate) {
               // Duplicate — show yellow toast, don't increment pothole count
               duplicateCount++;
@@ -455,18 +463,27 @@
               showToast(`⚠ Pothole already reported here (${data.nearby_count} detections at this spot)`, 'duplicate');
               log(`⚠ DUPLICATE — already reported ${data.nearby_count}× at (${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)})`, 'duplicate');
             } else {
-              potholeCount += data.alerts_saved;
+              potholeCount += data.potholes_saved || 0;
               document.getElementById('stat-potholes').textContent = potholeCount;
+              
+              plateCount += data.anpr_saved || 0;
+              document.getElementById('stat-plates').textContent = plateCount;
 
-              // Flash red border
-              flash.classList.add('show');
-              setTimeout(() => flash.classList.remove('show'), 300);
-
-              if (data.alerts_saved > 0) {
+              // Flash red border for potholes
+              if (data.potholes_saved > 0) {
+                flash.classList.add('show');
+                setTimeout(() => flash.classList.remove('show'), 300);
                 showToast(`🚨 New pothole saved to dashboard!`, 'saved');
                 log(`🚨 POTHOLE SAVED — GPS: (${data.gps.lat.toFixed(5)}, ${data.gps.lng.toFixed(5)})`, 'pothole');
-              } else {
-                log(`⚠ Pothole detected (not saved — GPS invalid)`);
+              }
+              
+              // Flash purple for plates
+              if (data.anpr_saved > 0) {
+                flash.style.borderColor = "#a78bfa";
+                flash.classList.add('show');
+                setTimeout(() => { flash.classList.remove('show'); flash.style.borderColor = "#f85149"; }, 300);
+                showToast(`📸 Number plate captured!`, 'saved');
+                log(`📸 PLATE SAVED — Check dashboard for details`, 'anpr');
               }
             }
           }
@@ -488,7 +505,7 @@
     await captureAndSend();
     
     const elapsed = Date.now() - startTime;
-    const delay = Math.max(0, 500 - elapsed);
+    const delay = Math.max(0, 800 - elapsed);  // 800ms between frames (~1.25fps) to reduce server load
     if (isCapturing) {
       captureInterval = setTimeout(captureLoop, delay);
     }
