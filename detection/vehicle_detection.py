@@ -24,6 +24,8 @@ import sys
 # Add parent dir so we can import alert_generator
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from alert_generator import save_traffic_data, create_alert, _load_json, _save_json, TRAFFIC_FILE
+import anpr
+import uuid
 
 # --------------------------------------------------
 # 1. Configuration
@@ -284,6 +286,54 @@ def detect_vehicles(input_video: str) -> None:
         # --------------------------------------------------
         tracked_objects = tracker.update(detections)
 
+        # --------------------------------------------------
+        # Run ANPR processing on tracked vehicles
+        # --------------------------------------------------
+        if frame_number % anpr.OCR_INTERVAL == 0:
+            for (oid, cls, conf, cx, cy) in tracked_objects:
+                # If we don't already have a confirmed plate for this vehicle
+                if anpr.get_confirmed_plate(oid) is None:
+                    # Find its original bounding box
+                    for det in detections:
+                        det_cx = (det["x1"] + det["x2"]) // 2
+                        det_cy = (det["y1"] + det["y2"]) // 2
+                        if abs(det_cx - cx) < 5 and abs(det_cy - cy) < 5 and det["class_name"] == cls:
+                            x1, y1, x2, y2 = det["x1"], det["y1"], det["x2"], det["y2"]
+                            vehicle_crop = frame[y1:y2, x1:x2]
+                            
+                            plate_data = anpr.process_vehicle(vehicle_crop, oid)
+                            
+                            if plate_data:
+                                # We got a new confirmed plate!
+                                gps = get_simulated_gps(frame_number)
+                                alert_id = str(uuid.uuid4())
+                                img_filename = f"anpr_{alert_id[:8]}.jpg"
+                                img_path = os.path.join(_THIS_DIR, "output", "alerts", img_filename)
+                                
+                                # Draw evidence box on a copy
+                                evidence_img = frame.copy()
+                                cv2.rectangle(evidence_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                                text = f"{plate_data['plate_number']} ({plate_data['confidence']:.2f})"
+                                cv2.putText(evidence_img, text, (x1, max(y1 - 10, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                                cv2.imwrite(img_path, evidence_img)
+                                
+                                create_alert(
+                                    event_type="vehicle_event",
+                                    confidence=plate_data["confidence"],
+                                    gps={"lat": gps["lat"], "lng": gps["lng"]},
+                                    bus_id="DL-BUS-042",
+                                    image_path=img_filename,
+                                    extra={
+                                        "vehicle": {
+                                            "track_id": oid,
+                                            "type": cls,
+                                            "plate_number": plate_data["plate_number"],
+                                            "plate_confidence": plate_data["confidence"]
+                                        }
+                                    }
+                                )
+                            break
+
         # Count per class this frame
         frame_counts = {name: 0 for name in TARGET_CLASSES.values()}
         for (oid, cls, conf, cx, cy) in tracked_objects:
@@ -339,6 +389,10 @@ def detect_vehicles(input_video: str) -> None:
                     x1, y1, x2, y2 = det["x1"], det["y1"], det["x2"], det["y2"]
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 200, 80), 2)
                     label = f"#{oid} {cls} {conf:.2f}"
+                    # Display confirmed plate if we have it
+                    plate = anpr.get_confirmed_plate(oid)
+                    if plate:
+                        label += f" [{plate['plate_number']}]"
                     cv2.putText(frame, label, (x1, max(y1 - 8, 20)),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 80), 2)
                     break

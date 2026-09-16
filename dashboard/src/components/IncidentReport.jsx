@@ -182,10 +182,25 @@ export default function IncidentReport({ alert, onClose }) {
       y += 11
 
       field('Bus ID / Device',     alert.bus_id || '—')
-      field('Vehicle Type',        alert.bus_id === 'MOBILE-CAM' ? 'Mobile Device (field inspection)' : 'Public Transport Bus')
+      field('Reporter Type',       alert.bus_id === 'MOBILE-CAM' ? 'Mobile Device (field inspection)' : 'Public Transport Bus')
       field('Onboard System',      'Urban Intel Edge Detection Unit v1.0')
 
       y += 4
+
+      // ── SECTION 3.5: TARGET VEHICLE (ANPR) ─────────────────────────────────
+      if (alert.vehicle) {
+        fillRect(L, y, R - L, 7, [241, 245, 249])
+        setFont('bold', 8, [71, 85, 105])
+        text('3.5  TARGET VEHICLE (ANPR)', L + 2, y + 5)
+        y += 11
+        
+        field('Plate Number', alert.vehicle.plate_number, true)
+        field('Vehicle Type', alert.vehicle.type)
+        field('Tracker ID',   String(alert.vehicle.track_id))
+        field('OCR Confidence', `${(alert.vehicle.plate_confidence * 100).toFixed(1)}%`)
+        
+        y += 4
+      }
 
       // ── SECTION 4: AI ANALYSIS METRICS ───────────────────────────────────
       fillRect(L, y, R - L, 7, [241, 245, 249])
@@ -420,10 +435,19 @@ export default function IncidentReport({ alert, onClose }) {
                 title: '3. Source Vehicle / Device',
                 fields: [
                   ['Bus ID / Device', alert.bus_id || '—'],
-                  ['Vehicle Type', alert.bus_id === 'MOBILE-CAM' ? 'Mobile Device (field inspection)' : 'Public Transport Bus'],
+                  ['Reporter Type', alert.bus_id === 'MOBILE-CAM' ? 'Mobile Device (field inspection)' : 'Public Transport Bus'],
                   ['Onboard System', 'Urban Intel Edge Detection Unit v1.0'],
                 ],
               },
+              ...(alert.vehicle ? [{
+                title: '3.5 Target Vehicle (ANPR)',
+                fields: [
+                  ['Plate Number', alert.vehicle.plate_number],
+                  ['Vehicle Type', alert.vehicle.type],
+                  ['OCR Confidence', `${(alert.vehicle.plate_confidence * 100).toFixed(1)}%`],
+                  ['Tracker ID', String(alert.vehicle.track_id)],
+                ]
+              }] : []),
               {
                 title: '4. AI Analysis Metrics',
                 fields: [

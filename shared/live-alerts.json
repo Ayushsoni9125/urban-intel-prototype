@@ -1,1 +1,77 @@
-[]
+[
+  {
+    "id": "9d40fe5d-e4d7-4306-b429-dc8f7aa494a6",
+    "event_type": "pothole",
+    "confidence": 0.741,
+    "timestamp": "2026-09-16T19:03:54.492033+00:00",
+    "gps": {
+      "lat": 28.609521,
+      "lng": 77.243092
+    },
+    "bus_id": "DL-BUS-017",
+    "image_path": "/images/pothole_001_20260917_003354.jpg",
+    "frame_number": 30,
+    "pothole_number": 1,
+    "simulated_gps": true
+  },
+  {
+    "id": "9f3faad9-e2fa-406b-bbb6-a1caf4df505a",
+    "event_type": "pothole",
+    "confidence": 0.613,
+    "timestamp": "2026-09-16T19:03:55.115576+00:00",
+    "gps": {
+      "lat": 28.609635,
+      "lng": 77.243225
+    },
+    "bus_id": "DL-BUS-017",
+    "image_path": "/images/pothole_002_20260917_003355.jpg",
+    "frame_number": 50,
+    "pothole_number": 2,
+    "simulated_gps": true
+  },
+  {
+    "id": "a8ed4440-b935-4bd6-8b87-db5d3c14cf6d",
+    "event_type": "pothole",
+    "confidence": 0.5573,
+    "timestamp": "2026-09-16T19:03:55.733199+00:00",
+    "gps": {
+      "lat": 28.609745,
+      "lng": 77.243249
+    },
+    "bus_id": "DL-BUS-017",
+    "image_path": "/images/pothole_003_20260917_003355.jpg",
+    "frame_number": 80,
+    "pothole_number": 3,
+    "simulated_gps": true
+  },
+  {
+    "id": "1cbe3d61-348e-4579-abec-35dcbfd3ea9e",
+    "event_type": "pothole",
+    "confidence": 0.8623,
+    "timestamp": "2026-09-16T19:04:03.439426+00:00",
+    "gps": {
+      "lat": 28.610461,
+      "lng": 77.244524
+    },
+    "bus_id": "DL-BUS-017",
+    "image_path": "/images/pothole_004_20260917_003403.jpg",
+    "frame_number": 425,
+    "pothole_number": 4,
+    "simulated_gps": true
+  },
+  {
+    "id": "ee46b507-64c2-41f2-9c24-4f0fad83a813",
+    "event_type": "pothole",
+    "confidence": 0.6267,
+    "timestamp": "2026-09-16T19:04:08.019960+00:00",
+    "gps": {
+      "lat": 28.611096,
+      "lng": 77.245284
+    },
+    "bus_id": "DL-BUS-017",
+    "image_path": "/images/pothole_005_20260917_003408.jpg",
+    "frame_number": 640,
+    "pothole_number": 5,
+    "simulated_gps": true
+  }
+]

@@ -40,6 +40,8 @@ try:
 except ImportError:
     _YOLO = None
 
+import anpr
+
 
 # --------------------------------------------------
 # Paths
@@ -68,6 +70,16 @@ if _YOLO is not None and _POTHOLE_MODEL_PATH.exists():
         print(f"[Mobile] Could not load pothole model: {e}")
 else:
     print("[Mobile] No pothole model found — mobile detection disabled.")
+
+# Load general YOLO model for mobile ANPR (vehicles)
+_GENERAL_MODEL_PATH = _PROJECT_ROOT / "yolov8n.pt"
+_general_model = None
+if _YOLO is not None and _GENERAL_MODEL_PATH.exists():
+    try:
+        _general_model = _YOLO(str(_GENERAL_MODEL_PATH))
+        print("[Mobile] General YOLO model loaded for ANPR.")
+    except Exception as e:
+        print(f"[Mobile] Could not load general YOLO model: {e}")
 (_PROJECT_ROOT / "shared").mkdir(parents=True, exist_ok=True)
 
 # Initialize empty JSON files if missing
@@ -162,6 +174,8 @@ async def reset_demo():
     reset_script = _PROJECT_ROOT / "reset_demo.py"
     if reset_script.exists():
         subprocess.run([sys.executable, str(reset_script)], cwd=str(_PROJECT_ROOT))
+    
+    anpr.reset_anpr_state()
         
     return {"status": "ok", "message": "Demo reset successful."}
 
@@ -251,9 +265,69 @@ async def mobile_frame(request: Request):
     status_text = f"LIVE MOBILE CAM | GPS: {lat:.5f}, {lng:.5f}"
     cv2.putText(annotated_frame, status_text, (10, 25),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 100), 2)
-    detect_text = f"Detections this frame: {len(detections)} | Model: pothole_best.pt"
+    detect_text = f"Detections this frame: {len(detections)} | Model: pothole_best.pt + yolov8n"
     cv2.putText(annotated_frame, detect_text, (10, 55),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.55, (200, 200, 200), 1)
+
+    # --------------------------------------------------
+    # ANPR for mobile flow
+    # --------------------------------------------------
+    anpr_alerts_saved = 0
+    if _general_model is not None:
+        # Run general model to find vehicles
+        vehicle_results = _general_model(frame, verbose=False, conf=0.35)
+        TARGET_CLASSES = {2: "car", 3: "motorcycle", 5: "bus", 7: "truck"}
+        for r in vehicle_results:
+            if r.boxes is not None:
+                for box in r.boxes:
+                    cls_id = int(box.cls[0])
+                    if cls_id in TARGET_CLASSES:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        vehicle_crop = frame[y1:y2, x1:x2]
+                        # Use a dummy track ID for mobile flow (since we don't have a tracker here, use random or just rely on 1-frame confidence for now)
+                        # We can bypass multi-frame consensus for mobile by just calling anpr OCR directly, or fake it
+                        # For simplicity, if we get a plate, we just alert
+                        # Actually, to use the existing `process_vehicle`, we can pass a dummy track_id but it requires FRAME_CONFIRMATION_THRESHOLD frames.
+                        # Since mobile frames are sporadic, let's just do single frame for mobile or keep the track_id as a generic 'mobile' and it will confirm after 2 frames.
+                        track_id = f"mob_{cls_id}_{x1}_{y1}"
+                        plate_data = anpr.process_vehicle(vehicle_crop, track_id)
+                        
+                        if plate_data:
+                            # Draw plate on annotated frame
+                            cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                            cv2.putText(annotated_frame, f"PLATE: {plate_data['plate_number']} ({plate_data['confidence']:.2f})", (x1, max(y1-10, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                            
+                            # Save ANPR alert
+                            alert_id = str(uuid.uuid4())
+                            img_filename = f"mobile_anpr_{alert_id[:8]}.jpg"
+                            img_path = IMAGES_DIR / img_filename
+                            cv2.imwrite(str(img_path), annotated_frame)
+                            
+                            try:
+                                existing = json.loads(ALERTS_FILE.read_text(encoding="utf-8").strip() or "[]")
+                            except Exception:
+                                existing = []
+                                
+                            alert = {
+                                "id": alert_id,
+                                "event_type": "vehicle_event",
+                                "confidence": plate_data['confidence'],
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                                "gps": {"lat": lat, "lng": lng},
+                                "bus_id": "MOBILE-CAM",
+                                "image_path": img_filename,
+                                "source": "mobile_camera",
+                                "vehicle": {
+                                    "track_id": track_id,
+                                    "type": TARGET_CLASSES[cls_id],
+                                    "plate_number": plate_data["plate_number"],
+                                    "plate_confidence": plate_data["confidence"]
+                                }
+                            }
+                            existing.insert(0, alert)
+                            ALERTS_FILE.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+                            anpr_alerts_saved += 1
+                            print(f"[Mobile] ANPR Alert saved: {plate_data['plate_number']}")
 
     # Encode annotated frame as JPEG and update stream
     _, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
@@ -328,7 +402,7 @@ async def mobile_frame(request: Request):
     return {
         "status": "ok",
         "detections": len(detections),
-        "alerts_saved": len(saved_alerts),
+        "alerts_saved": len(saved_alerts) + anpr_alerts_saved,
         "duplicate": is_duplicate,
         "nearby_count": nearby_count,
         "gps": {"lat": lat, "lng": lng},

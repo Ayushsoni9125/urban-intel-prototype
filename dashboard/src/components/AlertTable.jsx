@@ -9,6 +9,7 @@ const EVENT_LABELS = {
   waterlogging:       { label: 'Waterlogging', color: '#0369a1', bg: '#e0f2fe' },
   vehicle_congestion: { label: 'Congestion',   color: '#c05621', bg: '#fffaf0' },
   traffic_density:    { label: 'Traffic',      color: '#2c5282', bg: '#ebf8ff' },
+  vehicle_event:      { label: 'Vehicle/ANPR', color: '#4c1d95', bg: '#ede9fe' },
 }
 
 const STATUS_CONFIG = ['New', 'Reviewed', 'Resolved']
@@ -78,7 +79,7 @@ export default function AlertTable({ alerts, selectedAlert, onSelect, onGenerate
               top: 0,
               zIndex: 1,
             }}>
-              {['Time', 'Event', 'Location (Simulated GPS)', 'Confidence', 'Bus ID', 'Status', 'Actions'].map(h => (
+              {['Time', 'Event', 'Location', 'Confidence', 'Plate / Info', 'Status', 'Actions'].map(h => (
                 <th key={h} style={{
                   padding: '8px 12px',
                   textAlign: 'left',
@@ -146,7 +147,14 @@ export default function AlertTable({ alerts, selectedAlert, onSelect, onGenerate
                     </span>
                   </td>
                   <td style={{ padding: '8px 12px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-                    {alert.bus_id || '—'}
+                    {alert.event_type === 'vehicle_event' && alert.vehicle ? (
+                      <div>
+                        <div style={{ color: '#1a202c', fontWeight: 600 }}>{alert.vehicle.plate_number}</div>
+                        <div style={{ fontSize: 9 }}>{alert.vehicle.type} ({alert.vehicle.plate_confidence < 0.6 ? 'Uncertain' : `${(alert.vehicle.plate_confidence*100).toFixed(0)}%`})</div>
+                      </div>
+                    ) : (
+                      alert.bus_id || '—'
+                    )}
                   </td>
                   <td style={{ padding: '8px 12px' }}>
                     <span style={{
@@ -164,7 +172,7 @@ export default function AlertTable({ alerts, selectedAlert, onSelect, onGenerate
                     </span>
                   </td>
                   <td style={{ padding: '8px 12px' }}>
-                    {alert.event_type === 'pothole' && (
+                    {['pothole', 'vehicle_event'].includes(alert.event_type) && (
                       <button
                         id={`report-btn-${alert.id?.slice(0,8) || idx}`}
                         onClick={(e) => { e.stopPropagation(); onGenerateReport(alert) }}
