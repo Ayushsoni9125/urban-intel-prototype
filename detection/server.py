@@ -287,53 +287,54 @@ async def mobile_frame(request: Request):
         def _run_anpr_blocking():
             """Heavy ANPR work — runs in thread pool so it doesn't block the event loop."""
             nonlocal anpr_alerts_saved
-            TARGET_CLASSES = {2: "car", 3: "motorcycle", 5: "bus", 7: "truck"}
-            vehicle_results = _general_model(frame_copy, verbose=False, conf=0.35, imgsz=320)
-            for r in vehicle_results:
-                if r.boxes is None:
-                    continue
-                for box in r.boxes:
-                    cls_id = int(box.cls[0])
-                    if cls_id not in TARGET_CLASSES:
-                        continue
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    vehicle_crop = frame_copy[y1:y2, x1:x2]
-                    track_id = "mobile_capture_session"
-                    plate_data = anpr.process_vehicle(vehicle_crop, track_id)
-                    if plate_data:
-                        # Draw plate on annotated frame
-                        cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.putText(annotated_frame, f"PLATE: {plate_data['plate_number']} ({plate_data['confidence']:.2f})",
-                                    (x1, max(y1 - 10, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                        # Save alert
-                        alert_id = str(uuid.uuid4())
-                        img_filename = f"mobile_anpr_{alert_id[:8]}.jpg"
-                        img_path = IMAGES_DIR / img_filename
-                        cv2.imwrite(str(img_path), annotated_frame)
-                        try:
-                            existing = json.loads(ALERTS_FILE.read_text(encoding="utf-8").strip() or "[]")
-                        except Exception:
-                            existing = []
-                        alert_obj = {
-                            "id": alert_id,
-                            "event_type": "vehicle_event",
-                            "confidence": plate_data["confidence"],
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
-                            "gps": {"lat": frame_lat, "lng": frame_lng},
-                            "bus_id": "MOBILE-CAM",
-                            "image_path": img_filename,
-                            "source": "mobile_camera",
-                            "vehicle": {
-                                "track_id": track_id,
-                                "type": TARGET_CLASSES[cls_id],
-                                "plate_number": plate_data["plate_number"],
-                                "plate_confidence": plate_data["confidence"]
-                            }
-                        }
-                        existing.insert(0, alert_obj)
-                        ALERTS_FILE.write_text(json.dumps(existing, indent=2), encoding="utf-8")
-                        anpr_alerts_saved += 1
-                        print(f"[Mobile] ANPR Alert saved: {plate_data['plate_number']}")
+            # For mobile / screen demo, full frame scan works better than relying on YOLO crops
+            found_plates = anpr.scan_full_frame_for_plates(frame_copy)
+            
+            for plate_number, conf in found_plates:
+                # Use a dummy track ID and bounding box for mobile
+                track_id = f"mobile_plate_{plate_number}"
+                
+                # We don't have exact coordinates for the plate since we scanned the full frame,
+                # so we'll just put it in the center visually
+                h, w = frame_copy.shape[:2]
+                x1, y1 = w//2 - 50, h//2
+                
+                # Draw on annotated frame (though this might not sync perfectly due to threading)
+                cv2.putText(annotated_frame, f"PLATE: {plate_number} ({conf:.2f})",
+                            (10, 85 + (anpr_alerts_saved * 30)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 100, 255), 2)
+                
+                # Save alert
+                alert_id = str(uuid.uuid4())
+                img_filename = f"mobile_anpr_{alert_id[:8]}.jpg"
+                img_path = IMAGES_DIR / img_filename
+                cv2.imwrite(str(img_path), annotated_frame)
+                
+                try:
+                    existing = json.loads(ALERTS_FILE.read_text(encoding="utf-8").strip() or "[]")
+                except Exception:
+                    existing = []
+                    
+                alert_obj = {
+                    "id": alert_id,
+                    "event_type": "vehicle_event",
+                    "confidence": conf,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "gps": {"lat": frame_lat, "lng": frame_lng},
+                    "bus_id": "MOBILE-CAM",
+                    "image_path": img_filename,
+                    "source": "mobile_camera",
+                    "vehicle": {
+                        "track_id": track_id,
+                        "type": "unknown",
+                        "plate_number": plate_number,
+                        "plate_confidence": conf
+                    }
+                }
+                existing.insert(0, alert_obj)
+                ALERTS_FILE.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+                anpr_alerts_saved += 1
+                print(f"[Mobile] ANPR Alert saved: {plate_number}")
+                
             return anpr_alerts_saved
 
         # Fire ANPR in background — don't await so it doesn't delay the response
