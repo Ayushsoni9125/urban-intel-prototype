@@ -412,9 +412,9 @@
     if (!stream || !cam.videoWidth) return;
 
     return new Promise((resolve) => {
-      // Draw at reduced resolution (480x360) for faster upload and processing
-      const CAPTURE_W = 480;
-      const CAPTURE_H = 360;
+      // Draw at 640x480 — enough for OCR but not too heavy
+      const CAPTURE_W = 640;
+      const CAPTURE_H = 480;
       canvas.width = CAPTURE_W;
       canvas.height = CAPTURE_H;
       ctx.drawImage(cam, 0, 0, CAPTURE_W, CAPTURE_H);
