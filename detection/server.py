@@ -310,9 +310,49 @@ async def mobile_frame(request: Request):
             frame_lat, frame_lng = lat, lng
 
             def _run_anpr_blocking():
-                """Heavy ANPR work — runs in single-thread pool so it doesn't block FastAPI."""
+                """
+                Heavy ANPR work — runs in single-thread pool so it doesn't block FastAPI.
+                Strategy:
+                  1. Use YOLO to detect vehicle bounding boxes in the frame.
+                  2. Crop each vehicle region and run ANPR on the crop (much higher plate resolution).
+                  3. Fall back to a full-frame scan if no vehicles were detected.
+                """
                 anpr_alerts_saved = 0
-                found_plates = anpr.scan_full_frame_for_plates(frame_copy)
+                found_plates = []
+
+                # --- Step 1: Detect vehicles with YOLO ---
+                VEHICLE_CLASS_IDS = {2, 3, 5, 7}  # car, motorcycle, bus, truck
+                try:
+                    yolo_results = _general_model(frame_copy, verbose=False, conf=0.30)
+                    h_f, w_f = frame_copy.shape[:2]
+                    for r in yolo_results:
+                        if r.boxes is None:
+                            continue
+                        for box in r.boxes:
+                            cls_id = int(box.cls[0])
+                            if cls_id not in VEHICLE_CLASS_IDS:
+                                continue
+                            x1, y1, x2, y2 = map(int, box.xyxy[0])
+                            # Add small padding around the crop
+                            pad = 10
+                            x1c = max(0, x1 - pad)
+                            y1c = max(0, y1 - pad)
+                            x2c = min(w_f, x2 + pad)
+                            y2c = min(h_f, y2 + pad)
+                            crop = frame_copy[y1c:y2c, x1c:x2c]
+                            if crop.size == 0:
+                                continue
+                            # Run ANPR on vehicle crop (higher resolution than full frame)
+                            plates = anpr.scan_full_frame_for_plates(crop)
+                            found_plates.extend(plates)
+                            if plates:
+                                print(f"[Mobile ANPR] Vehicle crop gave plates: {plates}")
+                except Exception as e:
+                    print(f"[Mobile ANPR] YOLO vehicle detection error: {e}")
+
+                # --- Step 2: Fallback — full-frame scan if no crops yielded plates ---
+                if not found_plates:
+                    found_plates = anpr.scan_full_frame_for_plates(frame_copy)
                 
                 for plate_number, conf in found_plates:
                     track_id = f"mobile_plate_{plate_number}"

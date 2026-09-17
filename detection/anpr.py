@@ -14,7 +14,7 @@ _PROJECT_ROOT = os.path.dirname(_THIS_DIR)
 PLATE_MODEL_PATH = os.environ.get("PLATE_MODEL_PATH", os.path.join(_THIS_DIR, "models", "plate_model.pt"))
 
 # Relaxed thresholds — important for screen-to-camera scenario
-OCR_CONFIDENCE_THRESHOLD = 0.20       # Very lenient — screen degrades quality
+OCR_CONFIDENCE_THRESHOLD = 0.15       # Very lenient — screen degrades quality
 FRAME_CONFIRMATION_THRESHOLD = 1      # Single read is enough
 OCR_INTERVAL = 5                      # Dashcam mode only
 
@@ -107,15 +107,17 @@ def _preprocess_variants(img):
 # --------------------------------------------------
 
 def validate_indian_plate(raw_text):
-    """Clean and strictly validate license plate text to ignore screen/webpage UI noise."""
+    """Clean and validate license plate text. Supports Indian, EU, and generic formats."""
     clean = re.sub(r'[^A-Z0-9]', '', raw_text.upper())
-    if not (5 <= len(clean) <= 12):
+
+    # Accept plates 4–12 characters long
+    if not (4 <= len(clean) <= 12):
         return None
-        
-    # Must contain both letters AND digits (at least 2 of each)
+
+    # Must contain BOTH letters AND digits (at least 1 of each)
     letters = re.findall(r'[A-Z]', clean)
     digits = re.findall(r'[0-9]', clean)
-    if len(letters) < 2 or len(digits) < 2:
+    if len(letters) < 1 or len(digits) < 1:
         return None
 
     # Reject repetitive characters like "AAAAA" or "121212"
@@ -127,7 +129,7 @@ def validate_indian_plate(raw_text):
         "STOCK", "ROYALTY", "FREEPIK", "DOWNLOAD", "ATTRIBUTION", "RESOURCE",
         "YOUTUBE", "GOOGLE", "CHROME", "POTHOLE", "DETECT", "LIVE", "MODEL",
         "MOBILE", "CAMERA", "SCREEN", "DESKTOP", "CANCEL", "SUBMIT", "BUTTON",
-        "HEADER", "FOOTER", "CLICK", "IMAGE", "PHOTO", "VECTOR", "LICENSE",
+        "HEADER", "FOOTER", "CLICK", "IMAGE", "PHOTO", "VECTOR",
         "SHUTTER", "ADOBE", "UNSPLASH", "PEXELS", "GITHUB", "FLATICON",
         "SUBSCRIBE", "SHARE", "LIKE", "COMMENT", "ELEMENT", "SEARCH", "REQUIRED",
         "INFO", "SYSTEM", "REPORT", "ALERT", "DASHBOARD", "INTEL", "URBAN", "ROAD"
@@ -136,22 +138,29 @@ def validate_indian_plate(raw_text):
         if bw in clean:
             return None
 
-    # Format checks:
+    # --- Format checks (most specific first) ---
+
     # 1. Standard Indian state plate: e.g. DL3CCE1234, MH12AB1234, KA05M9999
-    # 2. BH Series: e.g. 22BH1234AB
-    # 3. Standard EU/Intl format: e.g. 0671GGP or 6711GGP or GGP0671
     states = r'(DL|MH|KA|HR|UP|TN|TS|GJ|RJ|KL|WB|BR|MP|AP|OD|PB|CH|GA|JK|UK|PY|AN|DD|DN|LD|NL|MN|TR|ML|MZ|SK|HP|JH|CG)'
     if re.match(r'^' + states + r'\d{1,2}[A-Z]{1,3}\d{1,4}$', clean):
         return clean
-        
+
+    # 2. BH Series: e.g. 22BH1234AB
     if re.match(r'^\d{2}BH\d{4}[A-Z]{1,2}$', clean):
         return clean
-        
-    if re.match(r'^\d{3,4}[A-Z]{2,4}$', clean) or re.match(r'^[A-Z]{2,4}\d{3,4}$', clean) or re.match(r'^[A-Z]{1,3}\d{3,4}[A-Z]{1,3}$', clean):
+
+    # 3. EU/Intl formats: e.g. 6934FMR, 9916GHS, AB1234, 1234ABC, ABC123
+    if re.match(r'^\d{3,4}[A-Z]{2,4}$', clean):   # e.g. 6934FMR
+        return clean
+    if re.match(r'^[A-Z]{2,4}\d{3,4}$', clean):   # e.g. FMR6934
+        return clean
+    if re.match(r'^[A-Z]{1,3}\d{3,4}[A-Z]{1,3}$', clean):  # e.g. AB1234CD
+        return clean
+    if re.match(r'^[A-Z]\d{3,4}[A-Z]{2,3}$', clean):  # e.g. E9916GHS (EU with country prefix)
         return clean
 
-    # Generic fallback: if 3+ digits and 2+ letters, length 5-10
-    if 5 <= len(clean) <= 10 and len(digits) >= 2 and len(letters) >= 2:
+    # 4. Generic fallback: mix of digits + letters, length 4-10
+    if 4 <= len(clean) <= 10 and len(digits) >= 2 and len(letters) >= 2:
         return clean
 
     return None
@@ -217,8 +226,8 @@ def scan_full_frame_for_plates(frame):
                 found.append((clean, conf))
                 
             # Try splitting it in case multiple words got grouped
-            for chunk in re.split(r'\s+', raw):
-                if len(chunk) > 4:
+            for chunk in re.split(r'[\s\-_]+', raw):
+                if len(chunk) >= 4:  # lowered from >4 to >=4 to catch short plates
                     clean_chunk = validate_indian_plate(chunk)
                     if clean_chunk:
                         found.append((clean_chunk, conf))
